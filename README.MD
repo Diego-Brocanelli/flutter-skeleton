@@ -343,10 +343,33 @@ class UserCard extends StatelessWidget {
 ```
 
 ### Recomendações Finais
-- Ative o linter (`analysis_options.yaml`)
-- Escreva testes
-- Mantenha widgets pequenos e reutilizáveis
-- Escolha **uma** solução de gerenciamento de estado e seja consistente (ex: Riverpod, Bloc)
+- Rode sempre o linter (`analysis_options.yaml`).
+- Escreva testes.
+- Mantenha widgets pequenos e reutilizáveis.
+- Escolha **uma** solução de gerenciamento de estado e seja consistente (ex: Riverpod, Bloc).
 
 **Referência principal**: [Effective Dart](https://dart.dev/effective-dart)
 
+### O que é o `analysis_options.yaml`?
+
+É o arquivo de **configuração do analisador estático do Dart** (o `dart analyze`).
+
+Ele permite que você defina:
+- Quais regras do **linter** devem ser ativadas/desativadas
+- Quais erros devem ser tratados como warnings ou erros graves
+- Regras personalizadas do time/projeto
+
+Esse arquivo é fundamental para manter o código seguindo as **boas práticas** da comunidade Dart/Flutter de forma automática.
+
+Ele fica na raiz do projeto mesmo nível do `pubspec.yaml`).
+
+**Como usar?**
+
+No terminal, execute os comandos.
+
+```bash
+make shell
+dart analyze
+```
+
+Ou configure seu editor (VS Code / Android Studio) para analisar automaticamente.
