@@ -130,7 +130,7 @@ info "Plataformas selecionadas: ${PLATFORMS}"
 # Windows (ou runners de CI apropriados) — este container Linux não compila
 # para essas plataformas, apenas gera a estrutura inicial do projeto.
 
-# ---- Persistir configuração em .env ------------------------------------------
+# ---- Persistir configuração em .env e .env.example ------------------------------------------
 # PROJECT_NAME é lido pelo docker-compose.yml para nomear o container/imagem/
 # volumes deste projeto (isso é o que evita conflito entre projetos diferentes
 # rodando na mesma máquina).
@@ -139,8 +139,14 @@ PROJECT_NAME=${CONTAINER_NAME}
 PLATFORMS=${PLATFORMS}
 EOF
 
-info "Arquivo .env criado em ./${RAW_NAME}/.env:"
+cat > .env.example <<EOF
+PROJECT_NAME=${CONTAINER_NAME}
+PLATFORMS=${PLATFORMS}
+EOF
+
+info "Arquivos .env e .env.example criados em ./${RAW_NAME}/.env:"
 sed 's/^/     /' .env
+sed 's/^/     /' .env.example
 
 # ---- Build e subida do container ---------------------------------------------
 info "Buildando a imagem Docker (pode demorar na primeira vez)..."
