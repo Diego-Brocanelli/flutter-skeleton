@@ -1,5 +1,15 @@
 # Flutter Skeleton
 
+## Sumário
+- [Introdução](#introdução).
+- [Requisitos](#requisitos).
+- [Como usar](#como-usar).
+- [Comandos make disponíveis](#comandos-make-disponíveis).
+- [Build multi plataforma via GitHub actions](#build-multi-plataforma-via-github-actions).
+- [Estrutura do template](#estrutura-do-template).
+- Complementos
+    - [Boas Práticas](#boas-práticas).
+
 ## Introdução
 
 Este repositório é um **template base para iniciar qualquer projeto Flutter** sem precisar instalar Flutter, Android SDK, Java ou dependências de build diretamente na sua máquina. Tudo roda dentro de um container Docker isolado e reprodutível, com:
@@ -196,3 +206,147 @@ O `compose.yml` usa a variável `PROJECT_NAME` (definida no arquivo `.env`, gera
 Ou seja, **um único nome — o que você digita na instalação — propaga para todo o ambiente**, garantindo que cada projeto criado a partir deste template tenha seu próprio container, imagem e volumes isolados, e você pode ter vários projetos rodando ao mesmo tempo na mesma máquina sem conflito de nome. O `Makefile` também lê esse mesmo `PROJECT_NAME` do `.env` (via `-include .env`) e o usa nas mensagens de `build`, `up`, `shell`, `build-app` e no comando `make name`.
 
 Se preferir renomear o container de um projeto já criado, basta editar `PROJECT_NAME` no `.env` e rodar `make down && make up` novamente (isso recria o container/imagem com o novo nome; os volumes antigos de cache não são migrados automaticamente).
+
+## Complementos
+
+### Boas práticas
+
+**✅ Boas Práticas da Comunidade Dart (Effective Dart)**
+
+Adote as diretrizes oficiais do **[Effective Dart](https://dart.dev/effective-dart)** para manter o código consistente, legível e fácil de manter.
+
+### 1. Formatação e Estilo
+- Sempre execute `dart format .`
+- Linhas preferencialmente **≤ 80 caracteres**
+- Use `{}` em **todos** os blocos de fluxo
+
+```dart
+// Bom
+if (condition) {
+  doSomething();
+}
+
+// Ruim
+if (condition) doSomething();
+```
+
+### 2. Convenções de Nomenclatura
+
+```dart
+// Tipos
+class UserProfile {}          // UpperCamelCase
+enum UserRole {}              // UpperCamelCase
+extension StringExtensions on String {} // UpperCamelCase
+
+// Arquivos e pastas
+// meu_app.dart, user_repository.dart, lib/src/
+
+// Variáveis, funções e parâmetros
+final userName = 'João';
+void fetchUserData(String userId) { ... } // lowerCamelCase
+
+// Constantes (prefer lowerCamelCase)
+const defaultTimeout = Duration(seconds: 30);
+const maxRetryCount = 3;
+```
+
+**Evite:**
+```dart
+const MAX_RETRY_COUNT = 3;        // SCREAMING_CAPS (evite em novo código)
+var mUser;                        // notação húngara
+```
+
+### 3. Imports e Ordenação
+
+```dart
+// dart: primeiro
+import 'dart:async';
+import 'dart:convert';
+
+// depois package:
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+// depois imports relativos
+import 'src/repositories/user_repository.dart';
+
+// exports em seção separada
+export 'src/models/user.dart';
+```
+
+### 4. Estrutura de Projeto (Recomendada)
+
+```bash
+lib/
+  meu_app.dart                 # Biblioteca principal
+  src/
+    core/                      # configurações, temas, di, etc.
+    features/
+      auth/
+        data/
+        domain/
+        presentation/
+    shared/                    # widgets, utils, extensions
+test/
+```
+
+### 5. Documentação
+
+```dart
+/// Recupera o perfil do usuário.
+///
+/// Se o usuário não existir, retorna `null`.
+/// 
+/// ```dart
+/// final user = await userService.getProfile('123');
+/// ```
+User? getProfile(String userId) { ... }
+```
+
+### 6. Boas Práticas de Código (Flutter/Dart)
+
+```dart
+// Prefira const
+const button = ElevatedButton(
+  onPressed: null,
+  child: Text('Salvar'),
+);
+
+// Null safety
+final name = user?.name ?? 'Anônimo';
+final email = user!.email; // só use ! quando tiver certeza
+
+// Evite funções grandes
+// Bom:
+class UserRepository {
+  Future<User> getUser(String id) async { ... }
+}
+
+// Use final quando possível
+final theme = Theme.of(context);
+```
+
+### 7. Performance & Boas Práticas Flutter
+
+```dart
+// Widgets
+class UserCard extends StatelessWidget {
+  const UserCard({super.key, required this.user}); // const constructor
+
+  final User user;
+
+  @override
+  Widget build(BuildContext context) { ... }
+}
+
+// Evite rebuilds desnecessários com const e gerenciamento de estado adequado
+```
+
+### Recomendações Finais
+- Ative o linter (`analysis_options.yaml`)
+- Escreva testes
+- Mantenha widgets pequenos e reutilizáveis
+- Escolha **uma** solução de gerenciamento de estado e seja consistente (ex: Riverpod, Bloc)
+
+**Referência principal**: [Effective Dart](https://dart.dev/effective-dart)
+
