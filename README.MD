@@ -113,10 +113,10 @@ Todos os comandos (exceto `build-app`, que roda dentro do container) leem `PROJE
 
 ```
 .
-├── Dockerfile          # Imagem com Flutter SDK, Android SDK e toolchain de build
-├── compose.yml  # Definição do serviço (nome/imagem dinâmicos via PROJECT_NAME)
-├── Makefile            # Atalhos para build/up/down/shell/create/etc.
-├── install.sh          # Script de bootstrap (clona + configura + cria o projeto)
+├── Dockerfile  # Imagem com Flutter SDK, Android SDK e toolchain de build
+├── compose.yml # Definição do serviço (nome/imagem dinâmicos via PROJECT_NAME)
+├── Makefile    # Atalhos para build/up/down/shell/create/etc.
+├── install.sh  # Script de bootstrap (clona + configura + cria o projeto)
 └── README.md
 ```
 
