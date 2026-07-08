@@ -1,0 +1,70 @@
+# SERVICE é o nome do serviço no docker-compose.yml (fixo, não muda por projeto).
+# O nome do CONTAINER/IMAGEM, esse sim, vem de PROJECT_NAME (definido no .env
+# pelo install.sh, com o nome do projeto escolhido pelo usuário).
+SERVICE := flutter-dev
+
+# Carrega PROJECT_NAME e PLATFORMS do .env gerado pelo install.sh, se existir.
+-include .env
+
+PROJECT_NAME ?= flutter-dev
+# PLATFORMS pode ser sobrescrito: make create PLATFORMS=android,web
+PLATFORMS ?= android,linux
+
+UID := $(shell id -u)
+GID := $(shell id -g)
+export UID
+export GID
+
+.PHONY: build up down dow shell create doctor logs ps clean build-app name
+
+build:
+	@echo ">> Buildando imagem '$(PROJECT_NAME)'..."
+	docker compose build
+
+up:
+	@xhost +local:docker >/dev/null 2>&1 || true
+	docker compose up -d
+	@echo ">> Container '$(PROJECT_NAME)' rodando."
+
+down:
+	docker compose down
+
+# Alias para "down" (mantido caso você digite "dow" por engano)
+dow: down
+
+shell:
+	@echo ">> Entrando no container '$(PROJECT_NAME)'..."
+	docker compose exec $(SERVICE) bash
+
+# Cria o projeto Flutter dentro do container, nas plataformas informadas
+create:
+	docker compose exec $(SERVICE) flutter create --platforms=$(PLATFORMS) .
+
+# Roda o flutter doctor dentro do container (diagnóstico do ambiente)
+doctor:
+	docker compose exec $(SERVICE) flutter doctor -v
+
+# Mostra logs do container
+logs:
+	docker compose logs -f $(SERVICE)
+
+# Lista containers do projeto
+ps:
+	docker compose ps
+
+# Mostra o nome do projeto/container atual (lido do .env)
+name:
+	@echo "$(PROJECT_NAME)"
+
+# Remove containers e volumes (cache do pub e do Android) deste projeto
+clean:
+	docker compose down -v
+
+build-app:
+	@echo ">> [$(PROJECT_NAME)] Build Linux (desktop)..."
+	docker compose exec $(SERVICE) flutter build linux --release
+	@echo ">> [$(PROJECT_NAME)] Build Android (APK)..."
+	docker compose exec $(SERVICE) flutter build apk --release
+	@echo ">> [$(PROJECT_NAME)] Build Windows..."
+	@echo "!! Não é possível compilar Windows dentro de um container Linux (requer MSVC)."
+	@echo "!! Use uma máquina/VM Windows ou um runner Windows no CI (ex: GitHub Actions)."
