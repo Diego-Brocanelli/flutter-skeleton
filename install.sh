@@ -3,8 +3,8 @@
 # Bootstrap para projetos Flutter baseados neste template Docker.
 #
 # Uso recomendado (preserva a interatividade do terminal):
-#   bash <(curl -fsSL https://raw.githubusercontent.com/USUARIO/REPO/main/install.sh)
-#   bash <(wget -qO- https://raw.githubusercontent.com/USUARIO/REPO/main/install.sh)
+#   bash <(curl -fsSL https://raw.githubusercontent.com/Diego-Brocanelli/flutter-skeleton/main/install.sh)
+#   bash <(wget -qO- https://raw.githubusercontent.com/Diego-Brocanelli/flutter-skeleton/main/install.sh)
 #
 # Evite "curl ... | bash" ou "wget ... | bash": nesse modo o stdin é consumido
 # pelo próprio pipe e os prompts abaixo (read) não funcionam.
@@ -12,7 +12,7 @@
 set -euo pipefail
 
 # ---- Configuração ----------------------------------------------------------
-REPO_URL="https://github.com/USUARIO/REPO.git"
+REPO_URL="https://github.com/Diego-Brocanelli/flutter-skeleton.git"
 
 # ---- Helpers ----------------------------------------------------------------
 info()  { printf "\033[1;34m>>\033[0m %s\n" "$1"; }
