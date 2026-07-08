@@ -130,7 +130,7 @@ info "Plataformas selecionadas: ${PLATFORMS}"
 # Windows (ou runners de CI apropriados) — este container Linux não compila
 # para essas plataformas, apenas gera a estrutura inicial do projeto.
 
-# ---- Persistir configuração em .env e .env.example ------------------------------------------
+# ---- Persistir configuração em .env e .env.example----------------------------
 # PROJECT_NAME é lido pelo docker-compose.yml para nomear o container/imagem/
 # volumes deste projeto (isso é o que evita conflito entre projetos diferentes
 # rodando na mesma máquina).
@@ -147,6 +147,13 @@ EOF
 info "Arquivos .env e .env.example criados em ./${RAW_NAME}/.env:"
 sed 's/^/     /' .env
 sed 's/^/     /' .env.example
+warn "O .env é local e NÃO deve ser commitado (já está no .gitignore)."
+info "Para o build multi-plataforma no GitHub Actions funcionar, configure"
+info "estes mesmos valores como Secrets no seu repositório do GitHub, em:"
+info "  Settings > Secrets and variables > Actions > New repository secret"
+info "  - PLATFORMS    = ${PLATFORMS}"
+info "  - PROJECT_NAME = ${CONTAINER_NAME}  (opcional, só nomeia os artifacts)"
+info "Detalhes em: README.md > 'Build multi-plataforma via GitHub Actions'"
 
 # ---- Build e subida do container ---------------------------------------------
 info "Buildando a imagem Docker (pode demorar na primeira vez)..."

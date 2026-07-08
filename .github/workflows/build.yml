@@ -1,0 +1,213 @@
+name: Build
+
+# Builda apenas as plataformas selecionadas para o projeto. A lista de
+# plataformas NÃO vem de um arquivo commitado (o .env é local e nunca
+# deve ir para o repositório) — ela vem de um Secret do repositório no
+# GitHub, configurado manualmente uma vez em:
+#   Settings > Secrets and variables > Actions > New repository secret
+#
+# Secrets esperados:
+#   PLATFORMS     (obrigatório) - ex.: "android,web,linux,windows"
+#                                  mesmo valor gravado no seu .env local
+#   PROJECT_NAME  (opcional)    - usado só para nomear os artifacts
+#                                  gerados (ex.: "meu_app-android-apk")
+#
+# Veja o README.md para o passo a passo de configuração.
+#
+# Gatilhos: só roda quando um PR é MERGEADO na main, ou manualmente pela
+# aba Actions (workflow_dispatch). PRs abertos/atualizados sem merge, e
+# pushes diretos em outras branches, não disparam este workflow.
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  PROJECT_NAME: ${{ secrets.PROJECT_NAME }}
+
+jobs:
+  # ---------------------------------------------------------------------
+  # Lê o secret PLATFORMS e expõe um booleano por plataforma para os
+  # demais jobs. Só executa de fato se o PR foi mergeado (não apenas
+  # fechado) ou se o workflow foi disparado manualmente.
+  # ---------------------------------------------------------------------
+  detect-platforms:
+    name: Detectar plataformas selecionadas
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    outputs:
+      android: ${{ steps.parse.outputs.android }}
+      ios: ${{ steps.parse.outputs.ios }}
+      web: ${{ steps.parse.outputs.web }}
+      linux: ${{ steps.parse.outputs.linux }}
+      windows: ${{ steps.parse.outputs.windows }}
+      macos: ${{ steps.parse.outputs.macos }}
+    steps:
+      - name: Ler PLATFORMS (secret do repositório)
+        id: parse
+        env:
+          PLATFORMS: ${{ secrets.PLATFORMS }}
+        run: |
+          if [ -z "${PLATFORMS:-}" ]; then
+            echo "::warning::Secret 'PLATFORMS' não configurado neste repositório (Settings > Secrets and variables > Actions). Nenhum job de build será executado. Veja o README.md."
+          else
+            echo "Plataformas selecionadas: (valor mascarado, pois vem de um secret)"
+          fi
+
+          for p in android ios web linux windows macos; do
+            if echo ",${PLATFORMS:-}," | grep -q ",${p},"; then
+              echo "${p}=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "${p}=false" >> "$GITHUB_OUTPUT"
+            fi
+          done
+
+  # ---------------------------------------------------------------------
+  android:
+    name: Build Android (APK)
+    needs: detect-platforms
+    if: needs.detect-platforms.outputs.android == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - run: flutter pub get
+      - run: flutter build apk --release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PROJECT_NAME || 'app' }}-android-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------
+  web:
+    name: Build Web
+    needs: detect-platforms
+    if: needs.detect-platforms.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - run: flutter pub get
+      - run: flutter build web --release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PROJECT_NAME || 'app' }}-web-build
+          path: build/web
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------
+  linux:
+    name: Build Linux (desktop)
+    needs: detect-platforms
+    if: needs.detect-platforms.outputs.linux == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Instalar dependências do Linux desktop
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev
+
+      - run: flutter config --enable-linux-desktop
+      - run: flutter pub get
+      - run: flutter build linux --release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PROJECT_NAME || 'app' }}-linux-build
+          path: build/linux/x64/release/bundle
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------
+  windows:
+    name: Build Windows (desktop)
+    needs: detect-platforms
+    if: needs.detect-platforms.outputs.windows == 'true'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - run: flutter config --enable-windows-desktop
+      - run: flutter pub get
+      - run: flutter build windows --release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PROJECT_NAME || 'app' }}-windows-build
+          path: build/windows/x64/runner/Release
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------
+  macos:
+    name: Build macOS (desktop)
+    needs: detect-platforms
+    if: needs.detect-platforms.outputs.macos == 'true'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - run: flutter config --enable-macos-desktop
+      - run: flutter pub get
+      - run: flutter build macos --release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PROJECT_NAME || 'app' }}-macos-build
+          path: build/macos/Build/Products/Release
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------
+  ios:
+    name: Build iOS (sem assinatura)
+    needs: detect-platforms
+    if: needs.detect-platforms.outputs.ios == 'true'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - run: flutter pub get
+      # --no-codesign: builda sem certificado/provisioning profile, útil
+      # para validar que o projeto compila. Para gerar um .ipa distribuível,
+      # é preciso configurar assinatura (certificados/secrets) à parte.
+      - run: flutter build ios --release --no-codesign
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PROJECT_NAME || 'app' }}-ios-build
+          path: build/ios/iphoneos
+          if-no-files-found: error

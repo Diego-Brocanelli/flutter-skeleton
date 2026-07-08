@@ -1,5 +1,4 @@
-# Flutter Skeleton Docker
-![Flutter Skeleton Banner](docs/flutter-skeleton-banner.png)
+# Flutter Skeleton
 
 ## Introdução
 
@@ -72,6 +71,28 @@ flutter run -d linux      # rodar o app desktop
 flutter run -d <device-id> # rodar em dispositivo Android via adb
 ```
 
+#### Rodando a versão Web
+
+Se você selecionou a plataforma `web` na instalação, rode:
+
+```bash
+flutter run -d chrome
+```
+
+Isso compila e roda o app no Chrome, com hot reload via servidor de desenvolvimento do Flutter. Algumas variações úteis:
+
+```bash
+flutter run -d chrome --web-port=8080   # escolher outra porta
+flutter run -d chrome --release         # build otimizado (release)
+flutter devices                         # listar dispositivos disponíveis (chrome, web-server, etc.)
+```
+
+> **Container sem o Chrome instalado?** Nesse caso use o modo `web-server` em vez de `chrome`:
+> ```bash
+> flutter run -d web-server --web-port=8080
+> ```
+> Como o container roda com `network_mode: host`, a porta fica acessível diretamente pela sua máquina host, sem precisar mapear portas — basta abrir `http://localhost:8080` no navegador do seu computador.
+
 ### 3. Usando o template manualmente (sem o install.sh)
 
 Se preferir não usar o script, você pode clonar o repositório e configurar manualmente:
@@ -109,14 +130,59 @@ make shell
 
 Todos os comandos (exceto `build-app`, que roda dentro do container) leem `PROJECT_NAME` do `.env` automaticamente, então nunca é preciso passar o nome do projeto manualmente — o `Makefile` já sabe qual container/imagem usar. Se o `.env` não existir (ex.: você clonou o template manualmente sem rodar `install.sh`), o padrão `flutter-dev` é usado.
 
+## Build multi-plataforma via GitHub Actions
+
+O template já vem com um workflow em `.github/workflows/build.yml` que builda automaticamente **apenas as plataformas que você selecionou na instalação** — sem precisar editar nada.
+
+### Como funciona
+
+1. O `install.sh` grava a plataforma escolhida em `PLATFORMS` no `.env` **local** (usado só pelo Docker/Makefile — nunca é commitado, já está no `.gitignore`).
+2. Você configura os mesmos valores como **Secrets do repositório no GitHub** (passo a passo abaixo) — é de lá que o workflow lê a informação.
+3. O workflow dispara em apenas dois casos: **quando um Pull Request é mergeado na `main`**, ou **manualmente** pela aba **Actions** do GitHub (botão "Run workflow"). PRs apenas abertos/atualizados, fechados sem merge, e pushes diretos em outras branches, não disparam o build.
+4. Um job `detect-platforms` lê o secret `PLATFORMS` e liga/desliga os jobs de build correspondentes.
+5. Cada plataforma selecionada builda em paralelo, no runner adequado, e o resultado fica disponível como **artifact** para download na página da execução do workflow:
+
+| Plataforma | Runner | Comando | Artifact |
+|---|---|---|---|
+| Android | `ubuntu-latest` | `flutter build apk --release` | `<PROJECT_NAME>-android-apk` |
+| Web | `ubuntu-latest` | `flutter build web --release` | `<PROJECT_NAME>-web-build` |
+| Linux | `ubuntu-latest` | `flutter build linux --release` | `<PROJECT_NAME>-linux-build` |
+| Windows | `windows-latest` | `flutter build windows --release` | `<PROJECT_NAME>-windows-build` |
+| macOS | `macos-latest` | `flutter build macos --release` | `<PROJECT_NAME>-macos-build` |
+| iOS | `macos-latest` | `flutter build ios --release --no-codesign` | `<PROJECT_NAME>-ios-build` |
+
+> **iOS sem assinatura:** o build de iOS no CI é gerado com `--no-codesign`, ou seja, compila e valida o projeto, mas não gera um `.ipa` assinado pronto para a App Store. Para distribuir de fato, é preciso configurar certificados/provisioning profiles como *secrets* adicionais do repositório — avise se quiser ajuda para configurar isso.
+
+> **Windows e macOS/iOS não compilam localmente no container Docker** (que é Linux) — é exatamente para isso que existe este workflow: os runners `windows-latest` e `macos-latest` do GitHub Actions têm o Visual Studio e o Xcode necessários já pré-instalados.
+
+### Configurando os Secrets no GitHub (obrigatório)
+
+O `.env` é local e **nunca é commitado**, então o workflow precisa que você configure manualmente os mesmos valores como Secrets do repositório, uma única vez:
+
+1. No GitHub, abra seu repositório e vá em **Settings > Secrets and variables > Actions**.
+2. Clique em **New repository secret** e crie:
+   - **Nome:** `PLATFORMS` — **Valor:** o mesmo do seu `.env`, ex. `android,web,linux,windows`
+   - **Nome:** `PROJECT_NAME` *(opcional)* — **Valor:** o mesmo do seu `.env`, ex. `meu_app`. Usado só para nomear os artifacts gerados; se omitido, os artifacts saem com o prefixo `app-`.
+3. Pronto — não precisa editar o `build.yml`.
+
+> **Por que Secret, e não um valor visível no arquivo?** Isso evita que a configuração fique espalhada em arquivos versionados e mantém uma única fonte de configuração por repositório, gerenciada pelo próprio GitHub. Como consequência, o valor de `PLATFORMS` aparece mascarado (`***`) nos logs do workflow — é esperado, não é um erro.
+
+### Ajustando as plataformas depois
+
+Se quiser mudar quais plataformas o CI builda, edite o Secret `PLATFORMS` em **Settings > Secrets and variables > Actions** (não dá para "editar" um secret existente — é preciso apagar e recriar com o novo valor). Não é preciso mexer no `build.yml`. Lembre-se de atualizar também o `.env` local, para manter os dois em sincronia.
+
 ## Estrutura do template
 
 ```
 .
-├── Dockerfile  # Imagem com Flutter SDK, Android SDK e toolchain de build
-├── compose.yml # Definição do serviço (nome/imagem dinâmicos via PROJECT_NAME)
-├── Makefile    # Atalhos para build/up/down/shell/create/etc.
-├── install.sh  # Script de bootstrap (clona + configura + cria o projeto)
+├── .github/
+│   └── workflows/
+│       └── build.yml   # CI: builda as plataformas selecionadas (via Secrets do GitHub)
+├── .gitignore          # Garante que .env local nunca seja commitado
+├── Dockerfile          # Imagem com Flutter SDK, Android SDK e toolchain de build
+├── compose.yml         # Definição do serviço (nome/imagem dinâmicos via PROJECT_NAME)
+├── Makefile            # Atalhos para build/up/down/shell/create/etc.
+├── install.sh          # Script de bootstrap (clona + configura + cria o projeto)
 └── README.md
 ```
 
