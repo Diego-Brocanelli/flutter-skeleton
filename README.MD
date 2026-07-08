@@ -1,14 +1,14 @@
 # Flutter Skeleton
 
 ## Sumário
-- [Introdução](#introdução).
-- [Requisitos](#requisitos).
-- [Como usar](#como-usar).
-- [Comandos make disponíveis](#comandos-make-disponíveis).
-- [Build multi plataforma via GitHub actions](#build-multi-plataforma-via-github-actions).
-- [Estrutura do template](#estrutura-do-template).
+- [Introdução](#introdução)
+- [Requisitos](#requisitos)
+- [Como usar](#como-usar)
+- [Comandos make disponíveis](#comandos-make-disponíveis)
+- [Build multi plataforma via GitHub actions](#build-multi-plataforma-via-github-actions)
+- [Estrutura do template](#estrutura-do-template)
 - Complementos
-    - [Boas Práticas](#boas-práticas).
+    - [Boas Práticas](#boas-práticas)
 
 ## Introdução
 
