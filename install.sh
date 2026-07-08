@@ -3,8 +3,8 @@
 # Bootstrap para projetos Flutter baseados neste template Docker.
 #
 # Uso recomendado (preserva a interatividade do terminal):
-#   bash <(curl -fsSL https://raw.githubusercontent.com/Diego-Brocanelli/flutter-skeleton/main/install.sh)
-#   bash <(wget -qO- https://raw.githubusercontent.com/Diego-Brocanelli/flutter-skeleton/main/install.sh)
+#   bash <(curl -fsSL https://raw.githubusercontent.com/USUARIO/REPO/main/install.sh)
+#   bash <(wget -qO- https://raw.githubusercontent.com/USUARIO/REPO/main/install.sh)
 #
 # Evite "curl ... | bash" ou "wget ... | bash": nesse modo o stdin é consumido
 # pelo próprio pipe e os prompts abaixo (read) não funcionam.
@@ -75,9 +75,18 @@ info "Diretório: ${RAW_NAME}"
 info "Nome do container/imagem: ${CONTAINER_NAME}"
 info "Nome do pacote Flutter: ${DART_PROJECT_NAME}"
 
+# Evita que o git fique preso pedindo usuário/senha (ex.: URL errada ou repo
+# privado); nesses casos, falha rápido com uma mensagem clara.
+export GIT_TERMINAL_PROMPT=0
+
 # ---- Clonar o template -------------------------------------------------------
 info "Clonando template..."
-git clone --quiet "${REPO_URL}" "${RAW_NAME}"
+if ! git clone --quiet "${REPO_URL}" "${RAW_NAME}"; then
+  error "Não foi possível clonar '${REPO_URL}'."
+  error "Verifique se a URL está correta e se o repositório é público"
+  error "(se for privado, configure autenticação via SSH ou um credential helper antes de rodar este script)."
+  exit 1
+fi
 cd "${RAW_NAME}"
 
 # Reinicia o histórico git para o novo projeto
@@ -129,6 +138,9 @@ cat > .env <<EOF
 PROJECT_NAME=${CONTAINER_NAME}
 PLATFORMS=${PLATFORMS}
 EOF
+
+info "Arquivo .env criado em ./${RAW_NAME}/.env:"
+sed 's/^/     /' .env
 
 # ---- Build e subida do container ---------------------------------------------
 info "Buildando a imagem Docker (pode demorar na primeira vez)..."

@@ -28,12 +28,17 @@ services:
       - ./:/app
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - /dev/bus/usb:/dev/bus/usb
-      - ${PROJECT_NAME:-flutter}-pub-cache:/home/devuser/.pub-cache
-      - ${PROJECT_NAME:-flutter}-android-home:/home/devuser/.android
+      # Nomes de volume aqui são estáticos de propósito: o Compose NÃO
+      # interpola variáveis em nomes/chaves, só em valores. O isolamento por
+      # projeto já é garantido pelo campo "name:" no topo deste arquivo — o
+      # Compose prefixa automaticamente o volume real com o nome do projeto,
+      # ex.: "projeto-teste_flutter-pub-cache".
+      - flutter-pub-cache:/home/devuser/.pub-cache
+      - android-home:/home/devuser/.android
     working_dir: /app
     stdin_open: true
     tty: true
 
 volumes:
-  ${PROJECT_NAME:-flutter}-pub-cache:
-  ${PROJECT_NAME:-flutter}-android-home:
+  flutter-pub-cache:
+  android-home:
