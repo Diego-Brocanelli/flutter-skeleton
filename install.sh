@@ -142,10 +142,10 @@ docker compose exec flutter-dev flutter pub add --dev \
   mocktail \
   very_good_analysis
 
-# Configurações visuais
-info "Configurando Native Splash e Launcher Icons..."
-docker compose exec flutter-dev flutter pub run flutter_native_splash:create
-docker compose exec flutter-dev flutter pub run flutter_launcher_icons
+# Configurações visuais (comentado temporariamente até configurar pubspec)
+# info "Configurando Native Splash e Launcher Icons..."
+# docker compose exec flutter-dev flutter pub run flutter_native_splash:create
+# docker compose exec flutter-dev flutter pub run flutter_launcher_icons
 
 # Geração de código
 info "Gerando código (Freezed, Riverpod, etc.)..."
