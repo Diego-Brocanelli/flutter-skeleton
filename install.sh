@@ -122,31 +122,19 @@ else
 fi
 
 # ====================== COMANDOS DENTRO DO CONTAINER ======================
-info "Instalando dependências e gerando código dentro do container..."
+info "Instalando dependências..."
 
 docker compose exec flutter-dev flutter pub add \
-  flutter_riverpod riverpod_annotation \
-  go_router \
-  dio retrofit \
-  freezed json_annotation \
-  logger \
-  flutter_native_splash flutter_launcher_icons
+  flutter_riverpod riverpod_annotation go_router dio retrofit json_annotation logger flutter_native_splash flutter_launcher_icons
 
 docker compose exec flutter-dev flutter pub add --dev \
-  build_runner \
-  riverpod_generator \
-  retrofit_generator \
-  freezed \
-  json_serializable \
-  mocktail \
-  very_good_analysis
+  build_runner riverpod_generator retrofit_generator freezed json_serializable mocktail very_good_analysis
 
-# Configurações visuais
+# Configurações visuais + geração
 docker compose exec flutter-dev flutter pub run flutter_native_splash:create --force
 docker compose exec flutter-dev flutter pub run flutter_launcher_icons
 
-# Geração de código
-info "Gerando código (Freezed, Riverpod, etc.)..."
+info "Gerando código..."
 docker compose exec flutter-dev flutter pub run build_runner build --delete-conflicting-outputs
 
 # ---- Finalização ------------------------------------------------------------
