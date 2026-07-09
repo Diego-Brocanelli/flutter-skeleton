@@ -108,11 +108,11 @@ docker compose exec flutter-dev flutter create --platforms="${PLATFORMS}" --proj
 # ---- Aplicar estrutura avançada e dependências ---------------------------
 info "Aplicando estrutura avançada e dependências modernas..."
 
-echo "DEBUG: Diretório atual = $(pwd)"
+info "DEBUG: Diretório atual = $(pwd)"
 
 cd "${RAW_NAME}" || { error "Não foi possível entrar no diretório do projeto"; exit 1; }
 
-echo "DEBUG: Diretório atual = $(pwd)"
+info "DEBUG: Diretório atual = $(pwd)"
 
 # Copiar template (se existir)
 if [ -d "template/lib" ]; then
