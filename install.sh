@@ -108,26 +108,20 @@ docker compose exec flutter-dev flutter create --platforms="${PLATFORMS}" --proj
 # ---- Aplicar estrutura avançada e dependências ---------------------------
 info "Aplicando estrutura avançada e dependências modernas..."
 
+# Já estamos dentro da pasta do projeto desde o git clone
 info "DEBUG: Diretório atual = $(pwd)"
 
-info "DEBUG: Entrando no diretório = $(pwd)/${RAW_NAME}"
-
-sleep 3
-
-cd "$(pwd)/${RAW_NAME}" || { error "Não foi possível entrar no diretório do projeto"; exit 1; }
-
-info "DEBUG: Diretório atual = $(pwd)"
-
-sleep 3
-
-# Copiar template (se existir)
+# Copiar estrutura do template (se existir)
 if [ -d "template/lib" ]; then
+  info "Copiando estrutura do template..."
   cp -r template/lib/* lib/ 2>/dev/null || true
   rm -rf template
+  info "Estrutura do template aplicada com sucesso."
+else
+  warn "Pasta 'template/' não encontrada."
 fi
 
 # ====================== COMANDOS DENTRO DO CONTAINER ======================
-
 info "Instalando dependências e gerando código dentro do container..."
 
 docker compose exec flutter-dev flutter pub add \
