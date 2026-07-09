@@ -118,6 +118,8 @@ cd "${RAW_NAME}" || { error "Não foi possível entrar no diretório do projeto"
 
 info "DEBUG: Diretório atual = $(pwd)"
 
+sleep 3
+
 # Copiar template (se existir)
 if [ -d "template/lib" ]; then
   cp -r template/lib/* lib/ 2>/dev/null || true
