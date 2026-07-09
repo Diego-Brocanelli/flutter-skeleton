@@ -108,7 +108,7 @@ docker compose exec flutter-dev flutter create --platforms="${PLATFORMS}" --proj
 # ---- Aplicar estrutura avançada e dependências ---------------------------
 info "Aplicando estrutura avançada e dependências modernas..."
 
-# Já estamos dentro da pasta do projeto desde o git clone
+# Já estamos dentro da pasta do projeto
 info "DEBUG: Diretório atual = $(pwd)"
 
 # Copiar estrutura do template (se existir)
@@ -122,19 +122,33 @@ else
 fi
 
 # ====================== COMANDOS DENTRO DO CONTAINER ======================
-info "Instalando dependências..."
+info "Instalando dependências e configurando o projeto..."
 
+# Dependências principais (sem freezed)
 docker compose exec flutter-dev flutter pub add \
-  flutter_riverpod riverpod_annotation go_router dio retrofit json_annotation logger flutter_native_splash flutter_launcher_icons
+  flutter_riverpod riverpod_annotation \
+  go_router \
+  dio retrofit \
+  json_annotation \
+  logger \
+  flutter_native_splash flutter_launcher_icons
 
+# Dependências de desenvolvimento (incluindo freezed)
 docker compose exec flutter-dev flutter pub add --dev \
-  build_runner riverpod_generator retrofit_generator freezed json_serializable mocktail very_good_analysis
+  build_runner \
+  riverpod_generator \
+  retrofit_generator \
+  freezed \
+  json_serializable \
+  mocktail \
+  very_good_analysis
 
-# Configurações visuais + geração
+# Configurações visuais
 docker compose exec flutter-dev flutter pub run flutter_native_splash:create --force
 docker compose exec flutter-dev flutter pub run flutter_launcher_icons
 
-info "Gerando código..."
+# Geração de código
+info "Gerando código (Freezed, Riverpod, etc.)..."
 docker compose exec flutter-dev flutter pub run build_runner build --delete-conflicting-outputs
 
 # ---- Finalização ------------------------------------------------------------
