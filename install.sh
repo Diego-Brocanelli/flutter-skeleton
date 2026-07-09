@@ -108,13 +108,19 @@ docker compose exec flutter-dev flutter create --platforms="${PLATFORMS}" --proj
 # ---- Aplicar estrutura avançada e dependências (Riverpod Stack) ------------
 info "Aplicando estrutura avançada e dependências modernas..."
 
+# Volta para o diretório do projeto (garantia)
+cd "${RAW_NAME}"
+
 # Copia a estrutura do template (se existir)
-if [ -d "template/lib" ]; then
+if [ -d "../template/lib" ]; then
+  cp -r ../template/lib/* lib/ 2>/dev/null || true
+  rm -rf ../template  # remove a pasta template
+elif [ -d "template/lib" ]; then
   cp -r template/lib/* lib/ 2>/dev/null || true
-  rm -rf template  # remove a pasta template do projeto final
+  rm -rf template
 fi
 
-cd "${RAW_NAME}"  # Garante que estamos no diretório correto
+info "Adicionando dependências..."
 
 # Adiciona dependências
 flutter pub add \
@@ -135,14 +141,15 @@ flutter pub add --dev \
   very_good_analysis
 
 # Configurações visuais
-flutter pub run flutter_native_splash:create
+flutter pub run flutter_native_splash:create --force
 flutter pub run flutter_launcher_icons
 
-# Gera código (freezed, riverpod, etc.)
+# Gera código inicial
+info "Gerando código (Freezed, Riverpod, etc.)..."
 flutter pub run build_runner build --delete-conflicting-outputs
 
 # ---- Finalização ------------------------------------------------------------
-info "Removendo histórico git do template (usuário criará seu próprio repo)..."
+info "Removendo histórico git do template..."
 rm -rf .git
 git init --quiet -b main
 
@@ -151,7 +158,7 @@ info "✅ Projeto '${RAW_NAME}' criado com sucesso!"
 info "Container: ${CONTAINER_NAME} | Pacote: ${DART_PROJECT_NAME}"
 info "Stack: Riverpod + go_router + Freezed"
 echo ""
-info "Para começar a desenvolver:"
+info "Para começar:"
 echo "   cd ${RAW_NAME}"
 echo "   make shell"
 echo ""
