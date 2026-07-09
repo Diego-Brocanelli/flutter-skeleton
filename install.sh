@@ -105,25 +105,24 @@ sleep 3
 info "Criando projeto Flutter..."
 docker compose exec flutter-dev flutter create --platforms="${PLATFORMS}" --project-name "${DART_PROJECT_NAME}" .
 
-# ---- Aplicar estrutura avançada e dependências (Riverpod Stack) ------------
+# ---- Aplicar estrutura avançada e dependências ---------------------------
 info "Aplicando estrutura avançada e dependências modernas..."
 
-# Volta para o diretório do projeto (garantia)
-cd "${RAW_NAME}"
+cd "${RAW_NAME}" || { error "Não foi possível entrar no diretório do projeto"; exit 1; }
 
-# Copia a estrutura do template (se existir)
-if [ -d "../template/lib" ]; then
-  cp -r ../template/lib/* lib/ 2>/dev/null || true
-  rm -rf ../template  # remove a pasta template
-elif [ -d "template/lib" ]; then
+echo "DEBUG: Diretório atual = $(pwd)"
+
+# Copiar template (se existir)
+if [ -d "template/lib" ]; then
   cp -r template/lib/* lib/ 2>/dev/null || true
   rm -rf template
 fi
 
-info "Adicionando dependências..."
+# ====================== COMANDOS DENTRO DO CONTAINER ======================
 
-# Adiciona dependências
-flutter pub add \
+info "Instalando dependências e gerando código dentro do container..."
+
+docker compose exec flutter-dev flutter pub add \
   flutter_riverpod riverpod_annotation \
   go_router \
   dio retrofit \
@@ -131,7 +130,7 @@ flutter pub add \
   logger \
   flutter_native_splash flutter_launcher_icons
 
-flutter pub add --dev \
+docker compose exec flutter-dev flutter pub add --dev \
   build_runner \
   riverpod_generator \
   retrofit_generator \
@@ -141,12 +140,12 @@ flutter pub add --dev \
   very_good_analysis
 
 # Configurações visuais
-flutter pub run flutter_native_splash:create --force
-flutter pub run flutter_launcher_icons
+docker compose exec flutter-dev flutter pub run flutter_native_splash:create --force
+docker compose exec flutter-dev flutter pub run flutter_launcher_icons
 
-# Gera código inicial
+# Geração de código
 info "Gerando código (Freezed, Riverpod, etc.)..."
-flutter pub run build_runner build --delete-conflicting-outputs
+docker compose exec flutter-dev flutter pub run build_runner build --delete-conflicting-outputs
 
 # ---- Finalização ------------------------------------------------------------
 info "Removendo histórico git do template..."
@@ -158,7 +157,7 @@ info "✅ Projeto '${RAW_NAME}' criado com sucesso!"
 info "Container: ${CONTAINER_NAME} | Pacote: ${DART_PROJECT_NAME}"
 info "Stack: Riverpod + go_router + Freezed"
 echo ""
-info "Para começar:"
+info "Para começar a desenvolver:"
 echo "   cd ${RAW_NAME}"
 echo "   make shell"
 echo ""
