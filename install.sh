@@ -108,7 +108,6 @@ docker compose exec flutter-dev flutter create --platforms="${PLATFORMS}" --proj
 # ---- Aplicar estrutura avançada e dependências ---------------------------
 info "Aplicando estrutura avançada e dependências modernas..."
 
-# Já estamos dentro da pasta do projeto
 info "DEBUG: Diretório atual = $(pwd)"
 
 # Copiar estrutura do template (se existir)
@@ -124,7 +123,7 @@ fi
 # ====================== COMANDOS DENTRO DO CONTAINER ======================
 info "Instalando dependências e configurando o projeto..."
 
-# Dependências principais (sem freezed)
+# Dependências principais
 docker compose exec flutter-dev flutter pub add \
   flutter_riverpod riverpod_annotation \
   go_router \
@@ -133,7 +132,7 @@ docker compose exec flutter-dev flutter pub add \
   logger \
   flutter_native_splash flutter_launcher_icons
 
-# Dependências de desenvolvimento (incluindo freezed)
+# Dependências de desenvolvimento
 docker compose exec flutter-dev flutter pub add --dev \
   build_runner \
   riverpod_generator \
@@ -144,7 +143,8 @@ docker compose exec flutter-dev flutter pub add --dev \
   very_good_analysis
 
 # Configurações visuais
-docker compose exec flutter-dev flutter pub run flutter_native_splash:create --force
+info "Configurando Native Splash e Launcher Icons..."
+docker compose exec flutter-dev flutter pub run flutter_native_splash:create
 docker compose exec flutter-dev flutter pub run flutter_launcher_icons
 
 # Geração de código
