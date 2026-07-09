@@ -1,71 +1,31 @@
-# =============================================
-# analysis_options.yaml - Qualidade Total (Flutter)
-# =============================================
-
 include: package:very_good_analysis/analysis_options.2.0.yaml
-# Alternativa leve: package:flutter_lints/flutter.yaml
 
 linter:
   rules:
-    # ================== Regras Essenciais ==================
     always_declare_return_types: true
-    always_put_required_named_parameters_first: true
     avoid_catches_without_on_clauses: true
     avoid_dynamic: true
-    avoid_empty_else: true
     avoid_print: true
     avoid_relative_lib_imports: true
-    avoid_renaming_method_parameters: true
-    avoid_returning_null_for_void: true
-    avoid_slow_async_io: true
-    avoid_type_to_string: true
-    avoid_unstable_final_fields: true
-    avoid_web_libraries_in_flutter: true
     cancel_subscriptions: true
     close_sinks: true
-    constant_identifier_names: false          # permite lowerCamelCase em const
-    deprecated_consistency: true
     directives_ordering: true
     eol_at_end_of_file: true
-    file_names: true
-    flutter_style_todos: true
-    library_annotations: true
-    library_names: true
-    library_prefixes: true
     no_default_cases: true
-    no_duplicate_case_values: true
-    no_leading_underscores_for_local_identifiers: true
     omit_local_variable_types: true
-    package_api_docs: false                   # ative se for publicar pacote
-    prefer_asserts_in_initializer_lists: true
     prefer_const_constructors: true
     prefer_const_declarations: true
-    prefer_const_literals_to_create_immutables: true
-    prefer_expression_function_bodies: true
     prefer_final_fields: true
     prefer_final_in_for_each: true
     prefer_final_locals: true
     prefer_interpolation_to_compose_strings: true
-    prefer_mixin: true
-    prefer_relative_imports: true
     prefer_single_quotes: true
     sort_child_properties_last: true
-    sort_constructors_first: true
-    sort_pub_dependencies: true
     unnecessary_await_in_return: true
-    unnecessary_brace_in_string_interps: true
-    unnecessary_getters_setters: true
-    unnecessary_lambdas: true
-    unnecessary_null_checks: true
-    unnecessary_overrides: true
-    unnecessary_raw_strings: true
     use_build_context_synchronously: true
-    use_enums: true
     use_key_in_widget_constructors: true
     use_late_for_private_fields_and_variables: true
-    use_string_in_part_of_directives: true
     use_super_parameters: true
-    valid_regexps: true
 
 analyzer:
   exclude:
@@ -73,20 +33,13 @@ analyzer:
     - lib/**/*.g.dart
     - lib/**/*.freezed.dart
     - lib/**/*.mocks.dart
-    - test/**/mocks/**
+    - "**/*.gen.dart"
 
   errors:
-    # Tratamento rigoroso
     avoid_print: error
     avoid_dynamic: error
-    avoid_catches_without_on_clauses: error
-    deprecated_member_use_from_same_package: warning
-    invalid_annotation_target: error
-    unused_import: error
-    unused_shown_name: error
     use_build_context_synchronously: error
-    prefer_const_constructors: error
-    prefer_const_declarations: error
+    unused_import: error
 
   language:
     strict-casts: true

@@ -5,8 +5,8 @@ SERVICE := flutter-dev
 
 # Carrega PROJECT_NAME e PLATFORMS do .env gerado pelo install.sh, se existir.
 -include .env
-
 PROJECT_NAME ?= flutter-dev
+
 # PLATFORMS pode ser sobrescrito: make create PLATFORMS=android,web
 PLATFORMS ?= android,linux
 
@@ -15,7 +15,9 @@ GID := $(shell id -g)
 export UID
 export GID
 
-.PHONY: build up down dow shell create doctor logs ps clean build-app name
+.PHONY: build up down dow shell create doctor logs ps clean build-app name analyze format fix test gen
+
+# ====================== Comandos Docker ======================
 
 build:
 	@echo ">> Buildando imagem '$(PROJECT_NAME)'..."
@@ -60,11 +62,48 @@ name:
 clean:
 	docker compose down -v
 
+# ====================== Comandos de Build ======================
+
 build-app:
 	@echo ">> [$(PROJECT_NAME)] Build Linux (desktop)..."
 	docker compose exec $(SERVICE) flutter build linux --release
+	
 	@echo ">> [$(PROJECT_NAME)] Build Android (APK)..."
 	docker compose exec $(SERVICE) flutter build apk --release
+	
 	@echo ">> [$(PROJECT_NAME)] Build Windows..."
 	@echo "!! Não é possível compilar Windows dentro de um container Linux (requer MSVC)."
 	@echo "!! Use uma máquina/VM Windows ou um runner Windows no CI (ex: GitHub Actions)."
+
+# ====================== Comandos de Qualidade de Código ======================
+
+# Executa análise estática do código (linter + analyzer)
+analyze:
+	@echo ">> Executando análise estática..."
+	dart analyze --fatal-infos
+
+# Formata todo o código seguindo o padrão do Dart
+format:
+	@echo ">> Formatando código..."
+	dart format lib test
+
+# Aplica correções automáticas do Dart
+fix:
+	@echo ">> Aplicando correções automáticas..."
+	dart fix --apply
+
+# Executa todos os testes do projeto
+test:
+	@echo ">> Executando testes..."
+	flutter test --coverage
+
+# Gera código (freezed, riverpod, retrofit, json_serializable, etc.)
+gen:
+	@echo ">> Gerando código..."
+	flutter pub run build_runner build --delete-conflicting-outputs
+
+# ====================== Comandos Úteis ======================
+
+# Combinação útil: formata, corrige e analisa
+all: format fix analyze
+	@echo ">> Formatação, correções e análise concluídas!"
