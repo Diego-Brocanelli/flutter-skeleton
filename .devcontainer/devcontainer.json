@@ -1,0 +1,40 @@
+{
+  "name": "Flutter Dev Container",
+
+  // Reaproveita o mesmo compose.yml/Dockerfile já usados pelo Makefile e
+  // pelo install.sh — não builda nada separado só para o VS Code. O .env
+  // gerado pelo install.sh (PROJECT_NAME/PLATFORMS) é lido normalmente,
+  // pois o Docker Compose CLI procura o .env na mesma pasta do compose.yml.
+  "dockerComposeFile": ["../compose.yml"],
+  "service": "flutter-dev",
+  "workspaceFolder": "/app",
+
+  // Não sobrescreve o CMD/entrypoint definidos no compose.yml/Dockerfile.
+  "overrideCommand": false,
+
+  // Não para o container quando a janela do VS Code é fechada — o ciclo
+  // de vida continua sendo controlado pelo `make up` / `make down`.
+  "shutdownAction": "none",
+
+  // Mesmo usuário não-root criado no Dockerfile (espelha o UID/GID do
+  // host, evitando problemas de permissão nos arquivos do projeto).
+  "remoteUser": "devuser",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "Dart-Code.dart-code",
+        "Dart-Code.flutter"
+      ],
+      "settings": {
+        "dart.flutterSdkPath": "/opt/flutter",
+        "files.eol": "\n"
+      }
+    }
+  },
+
+  // Garante as dependências do pubspec.yaml atualizadas ao abrir/reabrir
+  // o Dev Container. Sem efeito antes do `flutter create` ter rodado.
+  "postStartCommand": "bash -c 'test -f pubspec.yaml && flutter pub get || true'"
+}
+
