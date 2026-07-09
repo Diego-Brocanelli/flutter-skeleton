@@ -80,27 +80,27 @@ build-app:
 # Executa análise estática do código (linter + analyzer)
 analyze:
 	@echo ">> Executando análise estática..."
-	dart analyze --fatal-infos
+	docker compose exec $(SERVICE) dart analyze --fatal-infos
 
 # Formata todo o código seguindo o padrão do Dart
 format:
 	@echo ">> Formatando código..."
-	dart format lib test
+	docker compose exec $(SERVICE) dart format lib test
 
 # Aplica correções automáticas do Dart
 fix:
 	@echo ">> Aplicando correções automáticas..."
-	dart fix --apply
+	docker compose exec $(SERVICE) dart fix --apply
 
 # Executa todos os testes do projeto
 test:
 	@echo ">> Executando testes..."
-	flutter test --coverage
+	docker compose exec $(SERVICE) flutter test --coverage
 
 # Gera código (freezed, riverpod, retrofit, json_serializable, etc.)
 gen:
 	@echo ">> Gerando código..."
-	flutter pub run build_runner build --delete-conflicting-outputs
+	docker compose exec $(SERVICE) flutter pub run build_runner build --delete-conflicting-outputs
 
 # ====================== Comandos Úteis ======================
 
