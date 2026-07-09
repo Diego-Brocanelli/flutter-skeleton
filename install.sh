@@ -110,11 +110,11 @@ info "Aplicando estrutura avançada e dependências modernas..."
 
 info "DEBUG: Diretório atual = $(pwd)"
 
-info "${RAW_NAME}"
+info "DEBUG: Entrando no diretório = $(pwd)/${RAW_NAME}"
 
 sleep 3
 
-cd "${RAW_NAME}" || { error "Não foi possível entrar no diretório do projeto"; exit 1; }
+cd "$(pwd)/${RAW_NAME}" || { error "Não foi possível entrar no diretório do projeto"; exit 1; }
 
 info "DEBUG: Diretório atual = $(pwd)"
 
