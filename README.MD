@@ -12,7 +12,9 @@
 - [Comandos Make](#comandos-make)
 - [Estrutura do Projeto](#estrutura-do-projeto)
 - [Boas Práticas](#boas-práticas)
-- [Build Multi-plataforma (CI)](#build-multi-plataforma)
+- [Execução local](#execução-local)
+- [Recomendações Finais](#recomendações-finais)
+- [Build Multi-plataforma (CI)](#build-multi-plataforma-github-actions)
 
 ## Introdução
 
@@ -121,7 +123,7 @@ lib/
     └── shared/         # widgets, extensions, models comuns
 ```
 
-### Boas práticas
+## Boas práticas
 
 **✅ Boas Práticas da Comunidade Dart (Effective Dart)**
 
@@ -254,7 +256,77 @@ class UserCard extends StatelessWidget {
 // Evite rebuilds desnecessários com const e gerenciamento de estado adequado
 ```
 
-### Recomendações Finais
+## Execução local
+
+Depois de subir o ambiente (`make up` e `make shell`), você pode rodar o projeto diretamente com os comandos do Flutter, escolhendo a plataforma desejada.
+
+### Listar dispositivos/plataformas disponíveis
+
+```bash
+flutter devices
+```
+
+### Android
+
+```bash
+flutter run -d android
+```
+
+### Linux (Desktop)
+
+> O compartilhamento do X11 com o container já vem configurado no `compose.yml`
+> (`DISPLAY`, socket `/tmp/.X11-unix` e `network_mode: host`). Você só precisa
+> garantir que o container tenha permissão para acessar o servidor X11 do host:
+>
+> ```bash
+> xhost +local:docker
+> ```
+
+```bash
+flutter run -d linux
+```
+
+### Web
+
+```bash
+flutter run -d chrome
+```
+
+### iOS
+
+> Disponível apenas em ambientes com macOS/Xcode configurado (fora do escopo padrão deste template, que é focado em Linux/Docker).
+
+```bash
+flutter run -d ios
+```
+
+### macOS (Desktop)
+
+> Disponível apenas em ambientes com macOS.
+
+```bash
+flutter run -d macos
+```
+
+### Windows (Desktop)
+
+> Disponível apenas em ambientes com Windows.
+
+```bash
+flutter run -d windows
+```
+
+### Rodando em modo release
+
+Para testar uma build de produção localmente:
+
+```bash
+flutter run --release -d <plataforma>
+```
+
+Substitua `<plataforma>` por `android`, `linux`, `chrome`, `ios`, `macos` ou `windows`.
+
+## Recomendações Finais
 - Rode sempre o linter (`analysis_options.yaml`).
 - Escreva testes.
 - Mantenha widgets pequenos e reutilizáveis.
