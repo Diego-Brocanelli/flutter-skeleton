@@ -8,7 +8,10 @@
 set -euo pipefail
 
 # ---- Configuração ----------------------------------------------------------
-REPO_URL="https://github.com/Diego-Brocanelli/flutter-skeleton.git"
+# v1
+# REPO_URL="https://github.com/Diego-Brocanelli/flutter-skeleton.git"
+# v2
+REPO_BRANCH=v2 bash <(curl -fsSL https://raw.githubusercontent.com/Diego-Brocanelli/flutter-skeleton/v2/install.sh)
 
 # ---- Helpers ----------------------------------------------------------------
 info() { printf "\033[1;34m>>\033[0m %s\n" "$1"; }
