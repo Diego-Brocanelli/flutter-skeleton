@@ -114,18 +114,52 @@ info "DEBUG: Diretório atual = $(pwd)"
 if [ -d "template/lib" ]; then
   info "Copiando estrutura do template..."
   cp -r template/lib/* lib/ 2>/dev/null || true
-  rm -rf template
   info "Estrutura do template aplicada com sucesso."
 else
-  warn "Pasta 'template/' não encontrada."
+  warn "Pasta 'template/lib' não encontrada."
 fi
+
+# Copiar testes de unidade/widget do template (substitui o
+# test/widget_test.dart padrão gerado pelo `flutter create`)
+if [ -d "template/test" ]; then
+  info "Copiando testes (unit/widget) do template..."
+  rm -f test/widget_test.dart
+  cp -r template/test/* test/ 2>/dev/null || true
+  info "Testes aplicados com sucesso."
+else
+  warn "Pasta 'template/test' não encontrada."
+fi
+
+# Copiar testes de integração do template (o `flutter create` não gera
+# a pasta integration_test/ por padrão)
+if [ -d "template/integration_test" ]; then
+  info "Copiando testes de integração do template..."
+  mkdir -p integration_test
+  cp -r template/integration_test/* integration_test/ 2>/dev/null || true
+  info "Testes de integração aplicados com sucesso."
+else
+  warn "Pasta 'template/integration_test' não encontrada."
+fi
+
+rm -rf template
+
+# Substituir o placeholder __PACKAGE_NAME__ pelo nome real do pacote
+# (definido só agora, pelo `flutter create` acima) nos imports dos
+# arquivos de teste. Os arquivos em lib/ não usam esse placeholder
+# (usam import relativo de propósito, para não depender do nome do
+# pacote), mas os arquivos de teste em test/ e integration_test/ importam
+# código de lib/ via "package:", então precisam saber o nome real.
+info "Ajustando nome do pacote nos imports dos testes..."
+grep -rl "__PACKAGE_NAME__" test integration_test 2>/dev/null | while read -r file; do
+  sed -i "s/__PACKAGE_NAME__/${DART_PROJECT_NAME}/g" "$file"
+done
 
 # ====================== COMANDOS DENTRO DO CONTAINER ======================
 info "Instalando dependências e configurando o projeto..."
 
 # Dependências principais
 docker compose exec flutter-dev flutter pub add \
-  flutter_riverpod riverpod_annotation \
+  flutter_riverpod riverpod riverpod_annotation \
   go_router \
   dio retrofit \
   json_annotation \
@@ -141,6 +175,13 @@ docker compose exec flutter-dev flutter pub add --dev \
   json_serializable \
   mocktail \
   very_good_analysis
+
+# integration_test é uma dependência de SDK (faz parte do próprio Flutter,
+# não do pub.dev), por isso precisa dessa sintaxe especial em vez de entrar
+# na lista acima. flutter_test já vem incluído por padrão pelo `flutter
+# create`, então não precisa ser adicionado de novo aqui.
+info "Adicionando dependência de SDK: integration_test..."
+docker compose exec flutter-dev flutter pub add 'dev:integration_test:{"sdk":"flutter"}'
 
 # Configurações visuais (comentado temporariamente até configurar pubspec)
 # info "Configurando Native Splash e Launcher Icons..."

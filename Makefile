@@ -107,3 +107,14 @@ gen:
 # Combinação útil: formata, corrige e analisa
 all: format fix analyze
 	@echo ">> Formatação, correções e análise concluídas!"
+
+# ====================== Comandos Estruturais ======================
+
+## Cria a estrutura inicial de um novo domínio (feature).
+## Uso:
+##   make new-domain name="Estoque"
+##   make new-domain name="Exportação de produtos"
+##   make new-domain              # pergunta o nome interativamente
+.PHONY: new-domain
+new-domain:
+	@bash scripts/new_feature.sh "$(name)"
