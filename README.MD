@@ -113,14 +113,16 @@ Após a instalação, seu projeto segue esta estrutura:
 ```bash
 lib/
 ├── main.dart
-└── src/
-    ├── core/           # tema, router, di, config
+├── src/
+    ├── core/           # ex.: theme, router, di, config
+    │       ├── router/ # define todas as rotas do app
+    │       └── theme/  # define o thema do app
     ├── features/       # Feature-first
     │   └── home/
-    │       ├── data/
     │       ├── domain/
     │       └── presentation/
     └── shared/         # widgets, extensions, models comuns
+└── tests/
 ```
 
 ## Boas práticas
@@ -191,17 +193,26 @@ export 'src/models/user.dart';
 ### 4. Estrutura de Projeto (Recomendada)
 
 ```bash
-lib/
-├── main.dart
-└── src/
-    ├── core/           # tema, router, di, config
-    ├── features/       # Feature-first
-    │   └── home/
-    │       ├── data/
-    │       ├── domain/
-    │       └── presentation/
-    └── shared/         # widgets, extensions, models comuns
-test/
+project/
+├── lib/
+│   └── src/
+│       ├── core/
+│       ├── features/
+│       │   └── home/
+│       │       ├── domain/
+│       │       └── presentation/
+│       └── shared/
+├── test/
+│   ├── core/
+│   ├── features/
+│   │   └── home/
+│   │       ├── domain/
+│   │       │   └── home_repository_test.dart
+│   │       └── presentation/
+│   │           └── home_page_test.dart
+│   └── shared/
+└── integration_test/
+    └── app_test.dart
 ```
 
 ### 5. Documentação
