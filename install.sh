@@ -8,10 +8,10 @@
 set -euo pipefail
 
 # ---- Configuração ----------------------------------------------------------
-# v1
-# REPO_URL="https://github.com/Diego-Brocanelli/flutter-skeleton.git"
-# v2
-REPO_BRANCH=v2 bash <(curl -fsSL https://raw.githubusercontent.com/Diego-Brocanelli/flutter-skeleton/v2/install.sh)
+REPO_URL="https://github.com/Diego-Brocanelli/flutter-skeleton.git"
+# Permite testar uma branch específica sem alterar o padrão para quem já
+# usa o instalador normalmente (ex.: REPO_BRANCH=v2 antes do comando).
+REPO_BRANCH="${REPO_BRANCH:-main}"
 
 # ---- Helpers ----------------------------------------------------------------
 info() { printf "\033[1;34m>>\033[0m %s\n" "$1"; }
@@ -53,10 +53,11 @@ fi
 info "Diretório: ${RAW_NAME}"
 info "Container/Imagem: ${CONTAINER_NAME}"
 info "Pacote Flutter: ${DART_PROJECT_NAME}"
+info "Branch do template: ${REPO_BRANCH}"
 
 # ---- Clonar o template -------------------------------------------------------
 info "Clonando template..."
-git clone --quiet "${REPO_URL}" "${RAW_NAME}"
+git clone --quiet --branch "${REPO_BRANCH}" "${REPO_URL}" "${RAW_NAME}"
 cd "${RAW_NAME}"
 
 # ---- Escolha de plataformas --------------------------------------------------
