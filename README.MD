@@ -73,28 +73,6 @@ make new-feature name="Nome"   # Gerar uma nova feature completa (lib + testes)
 
 Lista completa de comandos: [Comandos Make](docs/comandos-make.md).
 
-### 3. Uso manual (sem install.sh)
-
-> ⚠️ **Atenção:** este caminho está desatualizado em relação ao que o
-> `install.sh` faz hoje (ele também roda `flutter create`, copia
-> `template/test` e `template/integration_test`, e ajusta o nome do pacote
-> nos imports dos testes — nenhum desses passos está reproduzido abaixo).
-> Se for seguir por aqui, esses passos precisam ser feitos manualmente, ou
-> este guia precisa ser atualizado para refletir o fluxo real.
-
-```bash
-git clone https://github.com/Diego-Brocanelli/flutter-skeleton.git meu-app
-cd meu-app
-rm -rf .git && git init
-
-echo "PROJECT_NAME=meu-app" > .env
-echo "PLATFORMS=android,linux" >> .env
-
-make build
-make up
-make shell
-```
-
 ## Documentação completa
 
 Guias detalhados ficam em [`/docs`](docs/):
