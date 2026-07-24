@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../../lib/src/core/theme/app_theme.dart';
+import 'package:__PACKAGE_NAME__/src/core/theme/app_theme.dart';
 
 // O que testamos aqui: a NOSSA configuração (useMaterial3, brightness,
 // seed color) está sendo aplicada como esperado nos dois temas.

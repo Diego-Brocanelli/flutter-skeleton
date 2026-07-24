@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../controllers/home_notifier.dart';
+import '../notifiers/home_notifier.dart';
 import '../widgets/home_header_widget.dart';
 
 class HomePage extends ConsumerWidget {
@@ -19,8 +19,8 @@ class HomePage extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               HomeHeaderWidget(message: data.welcomeMessage),
-              const SizedBox(height: 16),
-              Text(data.configuredPackages.join(' + ')),
+              const SizedBox(height: 24),
+              Text(data.configuredPackages.join(' • ')),
               Text('${data.configuredPackages.length} pacotes configurados'),
             ],
           ),

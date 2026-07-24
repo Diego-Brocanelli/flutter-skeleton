@@ -112,9 +112,13 @@ all: format fix analyze
 
 ## Cria a estrutura inicial de um novo domínio (feature).
 ## Uso:
-##   make new-domain name="Estoque"
-##   make new-domain name="Exportação de produtos"
-##   make new-domain              # pergunta o nome interativamente
-.PHONY: new-domain
-new-domain:
-	@bash scripts/new_feature.sh "$(name)"
+##   make new-feature name="Estoque"
+##   make new-feature name="Exportação de produtos"
+##   make new-feature              # pergunta o nome interativamente
+.PHONY: new-feature
+new-feature:
+	@if [ -z "$(filter-out $@,$(MAKECMDGOALS))" ]; then \
+		bash scripts/new_feature.sh; \
+	else \
+		bash scripts/new_feature.sh "$(filter-out $@,$(MAKECMDGOALS))"; \
+	fi

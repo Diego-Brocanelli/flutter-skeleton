@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../../lib/src/core/router/app_router.dart';
-import '../../../lib/src/features/home/presentation/pages/home_page.dart';
+import 'package:__PACKAGE_NAME__/src/core/router/app_router.dart';
+import 'package:__PACKAGE_NAME__/src/features/home/presentation/pages/home_page.dart';
 
 // O que testamos aqui: que a NOSSA configuração de rotas (o mapeamento
 // path -> widget) está correta — a rota "/" deve levar até a HomePage.
