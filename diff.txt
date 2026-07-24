@@ -1,0 +1,2297 @@
+diff --git a/Makefile b/Makefile
+index f3ce5e4..87a8a1e 100644
+--- a/Makefile
++++ b/Makefile
+@@ -112,9 +112,13 @@ all: format fix analyze
+ 
+ ## Cria a estrutura inicial de um novo domínio (feature).
+ ## Uso:
+-##   make new-domain name="Estoque"
+-##   make new-domain name="Exportação de produtos"
+-##   make new-domain              # pergunta o nome interativamente
+-.PHONY: new-domain
+-new-domain:
+-	@bash scripts/new_feature.sh "$(name)"
++##   make new-feature name="Estoque"
++##   make new-feature name="Exportação de produtos"
++##   make new-feature              # pergunta o nome interativamente
++.PHONY: new-feature
++new-feature:
++	@if [ -z "$(filter-out $@,$(MAKECMDGOALS))" ]; then \
++		bash scripts/new_feature.sh; \
++	else \
++		bash scripts/new_feature.sh "$(filter-out $@,$(MAKECMDGOALS))"; \
++	fi
+diff --git a/README.MD b/README.MD
+index f083cd1..2f28811 100644
+--- a/README.MD
++++ b/README.MD
+@@ -1,7 +1,7 @@
+ # Flutter Skeleton
+ ![Flutter Skeleton banner](docs/flutter-skeleton-banner.png)
+ 
+-**Template opinativo e moderno para Flutter** com ambiente completo em Docker.
++**Template opinativo para Flutter**, com ambiente completo em Docker e organização por Feature + DDD já aplicada.
+ 
+ ## Sumário
+ 
+@@ -13,39 +13,35 @@
+ 
+ ## Introdução
+ 
+-Este repositório é um **template completo** para iniciar projetos Flutter de forma rápida e consistente.
++O Flutter Skeleton é um **template completo** para começar projetos Flutter de forma rápida e consistente, sem abrir mão de uma arquitetura sólida desde o primeiro commit.
+ 
+-Tudo roda dentro de um **container Docker** isolado, sem necessidade de instalar Flutter, Android SDK ou outras ferramentas diretamente na máquina host.
++Ele é feito para desenvolvedores — do júnior ao tech lead. A ideia é simples: um dev sênior desenha o padrão uma vez, e qualquer pessoa do time reproduz esse mesmo padrão a cada feature nova, sem precisar decidir do zero como organizar o código.
+ 
+-**Principais vantagens:**
+-- Ambiente 100% reprodutível.
+-- Suporte nativo a múltiplas plataformas.
+-- Stack moderna e opinativa (Riverpod + go_router + Freezed).
+-- Clean Architecture (data/domain/presentation) já aplicada, com geração automática de novas features via `make new-feature`.
+-- CI/CD pronto com GitHub Actions.
+-- Fácil de ter vários projetos rodando simultaneamente.
++Tudo roda dentro de um **container Docker** isolado, sem precisar instalar Flutter, Android SDK ou outras ferramentas na máquina host.
++
++> O Skeleton é opinativo. O objetivo é dar uma base rápida e robusta para começar.
+ 
+ ## Stack Tecnológica
+ 
+-- **Gerenciamento de Estado**: [Riverpod](https://riverpod.dev/) (com [`riverpod_annotation`](https://pub.dev/packages/riverpod_annotation))
+-- **Navegação**: [go_router](https://pub.dev/packages/go_router)
+-- **HTTP**: [Dio](https://pub.dev/packages/dio) + [Retrofit](https://pub.dev/packages/retrofit)
+-- **Modelos**: [Freezed](https://pub.dev/packages/freezed) + [json_serializable](https://pub.dev/packages/json_serializable)
+-- **Injeção de Dependência**: [Riverpod](https://riverpod.dev/)
+-- **Logging**: [logger](https://pub.dev/packages/logger)
+-- **Geração de Código**: [build_runner](https://pub.dev/packages/build_runner)
+-- **Outros**:
+-  - [flutter_native_splash](https://pub.dev/packages/flutter_native_splash)
+-  - [flutter_launcher_icons](https://pub.dev/packages/flutter_launcher_icons)
++| Camada | Tecnologia |
++|---|---|
++| Gerenciamento de estado | [Riverpod](https://riverpod.dev/) (`AsyncNotifier`) |
++| Navegação | [go_router](https://pub.dev/packages/go_router) |
++| HTTP | [Dio](https://pub.dev/packages/dio) + [Retrofit](https://pub.dev/packages/retrofit) |
++| Modelos | [Freezed](https://pub.dev/packages/freezed) + [json_serializable](https://pub.dev/packages/json_serializable) |
++| Injeção de dependência | Riverpod (via `Provider`) |
++| Logging | [logger](https://pub.dev/packages/logger) |
++| Geração de código | [build_runner](https://pub.dev/packages/build_runner) |
++| Splash e ícones | [flutter_native_splash](https://pub.dev/packages/flutter_native_splash), [flutter_launcher_icons](https://pub.dev/packages/flutter_launcher_icons) |
+ 
+ ## Requisitos
+ 
+ - Linux (testado em Fedora e Ubuntu).
+ - Docker + Docker Compose v2.
+ - `git` e `make`.
+-- Servidor X11 (para desktop Linux).
++- Servidor X11 (necessário só para rodar o app como desktop Linux).
+ 
+-> **macOS / Windows**: Use WSL2 (Linux) ou adapte o `compose.yml`.
++> **macOS / Windows**: use WSL2 (Linux) ou adapte o `compose.yml`.
+ 
+ ## Como usar
+ 
+@@ -56,19 +52,19 @@ bash <(curl -fsSL https://raw.githubusercontent.com/Diego-Brocanelli/flutter-ske
+ ```
+ 
+ O script vai:
+-1. Perguntar nome do projeto.
+-2. Perguntar plataformas desejadas.
+-3. Clonar, configurar e criar o projeto com a stack completa (Clean Architecture + testes já aplicados).
+-4. Abrir o shell dentro do container.
++1. Perguntar o nome do projeto.
++2. Perguntar quais plataformas o projeto deve suportar.
++3. Clonar, configurar e criar o projeto com a stack completa (Feature + DDD + testes já aplicados).
++4. Abrir o shell dentro do container, pronto para desenvolver.
+ 
+ ### 2. Comandos do dia a dia
+ 
+ ```bash
+-make up                        # Subir container
+-make shell                     # Entrar no container
+-make analyze                   # Análise estática
+-make format                    # Formatar código
+-make new-feature name="Nome"   # Gerar uma nova feature completa (lib + testes)
++make up                        # Sobe o container
++make shell                     # Entra no container
++make analyze                   # Roda a análise estática
++make format                    # Formata o código
++make new-feature name="Nome"   # Gera uma nova feature completa (lib + testes)
+ ```
+ 
+ Lista completa de comandos: [Comandos Make](docs/comandos-make.md).
+@@ -77,8 +73,11 @@ Lista completa de comandos: [Comandos Make](docs/comandos-make.md).
+ 
+ Guias detalhados ficam em [`/docs`](docs/):
+ 
+-- [Comandos Make](docs/comandos-make.md) — todos os targets disponíveis.
+-- [Estrutura do Projeto](docs/estrutura-do-projeto.md) — como a Clean Architecture é organizada aqui, e o que `make new-feature` gera.
+-- [Boas Práticas](docs/boas-praticas.md) — convenções de código (Effective Dart), recomendações finais e o papel do `analysis_options.yaml`.
+-- [Execução local](docs/execucao-local.md) — como rodar o app em cada plataforma suportada.
+-- [Build Multi-plataforma (CI)](docs/ci-cd.md) — como funciona o CI/CD com GitHub Actions.
+\ No newline at end of file
++| Documento | Conteúdo |
++|---|---|
++| [Estrutura do Projeto](docs/estrutura-do-projeto.md) | Como a organização por Feature + DDD funciona aqui, e o que `make new-feature` gera |
++| [Usecases e Domain Services](docs/usecases-e-domain-services.md) | Quando e como crescer além do padrão básico |
++| [Comandos Make](docs/comandos-make.md) | Todos os comandos disponíveis |
++| [Boas Práticas](docs/boas-praticas.md) | Convenções de código (Effective Dart) e o papel do `analysis_options.yaml` |
++| [Execução Local](docs/execucao-local.md) | Como rodar o app em cada plataforma suportada |
++| [CI/CD](docs/ci-cd.md) | Como funciona o build automático via GitHub Actions |
+\ No newline at end of file
+diff --git a/docs/boas-praticas.md b/docs/boas-praticas.md
+index c36b105..bb3a6b7 100644
+--- a/docs/boas-praticas.md
++++ b/docs/boas-praticas.md
+@@ -1,13 +1,14 @@
+ # Boas Práticas
+ 
+-## Boas Práticas da Comunidade Dart (Effective Dart)
++## Effective Dart
+ 
+-Adote as diretrizes oficiais do **[Effective Dart](https://dart.dev/effective-dart)** para manter o código consistente, legível e fácil de manter.
++Este template segue as diretrizes oficiais do **[Effective Dart](https://dart.dev/effective-dart)** para manter o código consistente, legível e fácil de manter. Os pontos abaixo são os que mais aparecem no dia a dia — a referência completa vale a leitura, principalmente pra quem está começando com Dart.
+ 
+-### 1. Formatação e Estilo
+-- Sempre execute `dart format .`
+-- Linhas preferencialmente **≤ 80 caracteres**
+-- Use `{}` em **todos** os blocos de fluxo
++### 1. Formatação e estilo
++
++- Sempre rode `dart format .` (ou `make format`) antes de commitar.
++- Linhas com **até 80 caracteres**, sempre que possível.
++- Use `{}` em **todos** os blocos de fluxo, mesmo os de uma linha só.
+ 
+ ```dart
+ // Bom
+@@ -15,139 +16,134 @@ if (condition) {
+   doSomething();
+ }
+ 
+-// Ruim
++// Evite
+ if (condition) doSomething();
+ ```
+ 
+-### 2. Convenções de Nomenclatura
++### 2. Convenções de nomenclatura
+ 
+ ```dart
+-// Tipos
+-class UserProfile {}          // UpperCamelCase
+-enum UserRole {}              // UpperCamelCase
+-extension StringExtensions on String {} // UpperCamelCase
++// Tipos: UpperCamelCase
++class UserProfile {}
++enum UserRole {}
++extension StringExtensions on String {}
+ 
+-// Arquivos e pastas
+-// meu_app.dart, user_repository.dart, lib/src/
++// Arquivos e pastas: snake_case
++// user_repository.dart, home_notifier.dart, lib/src/features/home/
+ 
+-// Variáveis, funções e parâmetros
++// Variáveis, funções e parâmetros: lowerCamelCase
+ final userName = 'João';
+-void fetchUserData(String userId) { ... } // lowerCamelCase
++void fetchUserData(String userId) { ... }
+ 
+-// Constantes (prefer lowerCamelCase)
++// Constantes: lowerCamelCase
+ const defaultTimeout = Duration(seconds: 30);
+ const maxRetryCount = 3;
+ ```
+ 
+ **Evite:**
+ ```dart
+-const MAX_RETRY_COUNT = 3;        // SCREAMING_CAPS (evite em novo código)
+-var mUser;                        // notação húngara
++const MAX_RETRY_COUNT = 3;   // SCREAMING_CAPS — não é convenção Dart
++var mUser;                   // notação húngara
+ ```
+ 
+-### 3. Imports e Ordenação
++### 3. Imports e ordenação
+ 
+ ```dart
+-// dart: primeiro
++// 1. dart:
+ import 'dart:async';
+ import 'dart:convert';
+ 
+-// depois package:
++// 2. package:
+ import 'package:flutter/material.dart';
+-import 'package:provider/provider.dart';
++import 'package:flutter_riverpod/flutter_riverpod.dart';
+ 
+-// depois imports relativos
+-import 'src/repositories/user_repository.dart';
++// 3. imports relativos
++import '../domain/entities/home_entity.dart';
+ 
+-// exports em seção separada
++// 4. exports, em seção separada
+ export 'src/models/user.dart';
+ ```
+ 
+-### 4. Estrutura de Projeto
++### 4. Estrutura de projeto
++
++A organização de pastas (Feature + DDD) tem um documento próprio: veja [Estrutura do Projeto](estrutura-do-projeto.md).
+ 
+-Veja o detalhe completo em [Estrutura do Projeto](estrutura-do-projeto.md).
++### 5. Documentação de código
+ 
+-### 5. Documentação
++Documente classes e métodos públicos com `///`, principalmente quando o comportamento não for óbvio pelo nome:
+ 
+ ```dart
+ /// Recupera o perfil do usuário.
+ ///
+-/// Se o usuário não existir, retorna `null`.
+-/// 
++/// Retorna `null` se o usuário não existir.
++///
+ /// ```dart
+ /// final user = await userService.getProfile('123');
+ /// ```
+ User? getProfile(String userId) { ... }
+ ```
+ 
+-### 6. Boas Práticas de Código (Flutter/Dart)
++### 6. Boas práticas de código
+ 
+ ```dart
+-// Prefira const
++// Prefira const sempre que possível
+ const button = ElevatedButton(
+   onPressed: null,
+   child: Text('Salvar'),
+ );
+ 
+-// Null safety
++// Null safety: seja explícito
+ final name = user?.name ?? 'Anônimo';
+-final email = user!.email; // só use ! quando tiver certeza
++final email = user!.email; // só use ! quando tiver certeza absoluta
+ 
+-// Evite funções grandes
+-// Bom:
++// Funções e classes pequenas, com responsabilidade única
+ class UserRepository {
+   Future<User> getUser(String id) async { ... }
+ }
+ 
+-// Use final quando possível
++// Use final por padrão; var só quando o valor precisa mudar
+ final theme = Theme.of(context);
+ ```
+ 
+-### 7. Performance & Boas Práticas Flutter
++### 7. Performance no Flutter
+ 
+ ```dart
+-// Widgets
+ class UserCard extends StatelessWidget {
+-  const UserCard({super.key, required this.user}); // const constructor
++  const UserCard({required this.user, super.key}); // const constructor
+ 
+   final User user;
+ 
+   @override
+   Widget build(BuildContext context) { ... }
+ }
+-
+-// Evite rebuilds desnecessários com const e gerenciamento de estado adequado
+ ```
+ 
+-## Recomendações Finais
++Use `const` em widgets sempre que possível, e mantenha o `Notifier` só com estado e orquestração — nenhuma lógica de negócio deveria morar lá (isso é papel do `domain`; veja [Estrutura do Projeto](estrutura-do-projeto.md)).
+ 
+-- Rode sempre o linter (`analysis_options.yaml`).
+-- Escreva testes.
+-- Mantenha widgets pequenos e reutilizáveis.
+-- Escolha **uma** solução de gerenciamento de estado e seja consistente (ex: Riverpod, Bloc).
++## Recomendações finais
++
++- Rode sempre o linter (`make analyze`) antes de abrir um PR.
++- Escreva testes — o template já vem com a estrutura de testes espelhada, sem desculpa pra pular esse passo.
++- Mantenha widgets pequenos e reutilizáveis, extraídos para `presentation/widgets/`.
++- Riverpod é a solução de gerenciamento de estado deste template — mantenha consistência, não misture com outra abordagem no meio do caminho.
+ 
+ **Referência principal**: [Effective Dart](https://dart.dev/effective-dart)
+ 
+ ## O que é o `analysis_options.yaml`?
+ 
+-É o arquivo de **configuração do analisador estático do Dart** (o `dart analyze`).
+-
+-Ele permite que você defina:
+-- Quais regras do **linter** devem ser ativadas/desativadas
+-- Quais erros devem ser tratados como warnings ou erros graves
+-- Regras personalizadas do time/projeto
+-
+-Esse arquivo é fundamental para manter o código seguindo as **boas práticas** da comunidade Dart/Flutter de forma automática.
++É o arquivo de configuração do analisador estático do Dart (`dart analyze`). Nele você define:
+ 
+-Ele fica na raiz do projeto, no mesmo nível do `pubspec.yaml`.
++- Quais regras do linter ficam ativas ou desativadas.
++- Quais problemas viram erro, warning ou só um aviso informativo.
++- Regras específicas do seu time ou projeto.
+ 
+-**Como usar?**
++Ele fica na raiz do projeto, no mesmo nível do `pubspec.yaml`, e é essencial pra manter o código seguindo as convenções acima **de forma automática**, sem depender de review manual pra pegar cada detalhe.
+ 
+-No terminal, execute os comandos:
++**Como usar:**
+ 
+ ```bash
+ make shell
+ dart analyze
+ ```
+ 
+-Ou configure seu editor (VS Code / Android Studio) para analisar automaticamente.
+\ No newline at end of file
++Ou configure seu editor (VS Code / Android Studio / IntelliJ) para rodar a análise automaticamente ao salvar.
+\ No newline at end of file
+diff --git a/docs/ci-cd.md b/docs/ci-cd.md
+index e69de29..c6180da 100644
+--- a/docs/ci-cd.md
++++ b/docs/ci-cd.md
+@@ -0,0 +1,68 @@
++# CI/CD com GitHub Actions
++
++O template vem com um workflow de **build automático** já configurado em `.github/workflows/build.yml`.
++
++## Quando o pipeline roda
++
++O pipeline **só executa** em duas situações:
++
++1. Quando um Pull Request é mergeado na branch `main`.
++2. Quando você dispara o workflow manualmente, na aba **Actions**.
++
++Isso evita builds desnecessários em PRs abertos ou pushes em branches de feature.
++
++## Configuração obrigatória
++
++Você precisa configurar um Secret no repositório:
++
++1. Vá em **Settings > Secrets and variables > Actions**.
++2. Clique em **New repository secret**.
++3. Crie um secret chamado **`PLATFORMS`**.
++
++**Valor exemplo**, com qualquer combinação que você queira buildar:
++- `android,ios`
++- `android,web,linux`
++- `android,ios,web,macos,windows` (todas)
++
++> **Dica:** use o mesmo valor que você colocou no `.env` na criação do projeto.
++
++## O que o pipeline faz
++
++- Detecta automaticamente as plataformas configuradas no Secret `PLATFORMS`.
++- Executa só os jobs necessários — por exemplo, se `ios` não estiver na lista, o job correspondente é pulado.
++- Gera os artefatos de build para cada plataforma.
++- Sobe os artefatos para você baixar na aba **Actions**.
++
++### Builds suportados
++
++| Plataforma | Job no CI | Artefato gerado |
++|---|---|---|
++| Android | `android` | `app-release.apk` |
++| Web | `web` | Pasta `build/web` |
++| Linux | `linux` | Executável Linux |
++| Windows | `windows` | Pasta com `.exe` |
++| macOS | `macos` | App macOS |
++| iOS | `ios` | Pasta de build (sem assinatura) |
++
++## Disparando manualmente
++
++1. Vá na aba **Actions** do repositório.
++2. Selecione o workflow **Build**.
++3. Clique em **Run workflow**.
++4. Escolha a branch `main` e confirme.
++
++## Boas práticas
++
++- O `.env` **nunca** deve ser commitado (já está no `.gitignore`).
++- O secret `PLATFORMS` é a fonte única da verdade para o CI.
++- Builds distribuíveis de iOS (`.ipa`) exigem certificados e provisioning profiles — fora do escopo deste template básico.
++- O workflow é otimizado por custo: só roda o que é necessário.
++
++## Próximos passos possíveis
++
++Ideias pra evoluir o pipeline, fora do escopo atual do template:
++
++- Rodar `flutter test` automaticamente no CI.
++- Publicar no Google Play / App Store via Fastlane.
++- Notificações no Slack/Discord após o build.
++- Cache de dependências para builds mais rápidos.
+\ No newline at end of file
+diff --git a/docs/comandos-make.md b/docs/comandos-make.md
+index 764bc4b..1a6e947 100644
+--- a/docs/comandos-make.md
++++ b/docs/comandos-make.md
+@@ -1,24 +1,23 @@
+ # Comandos Make
+ 
+-| Comando                       | Descrição                                        |
+-|--------------------------------|--------------------------------------------------|
+-| `make build`                  | Builda a imagem Docker                            |
+-| `make up`                     | Sobe o container                                  |
+-| `make down`                   | Para o container                                  |
+-| `make shell`                  | Abre shell dentro do container                    |
+-| `make analyze`                | Executa análise estática                          |
+-| `make format`                 | Formata o código                                  |
+-| `make fix`                    | Aplica correções automáticas                      |
+-| `make gen`                    | Gera código (Freezed, Riverpod, etc.)             |
+-| `make test`                   | Executa testes                                    |
+-| `make new-feature name="X"`   | Gera uma nova feature completa (Clean Architecture, lib + testes) |
+-| `make build-app`              | Gera builds de release (Android + Linux)          |
+-| `make clean`                  | Remove container e caches                         |
++| Comando | Descrição |
++|---|---|
++| `make build` | Builda a imagem Docker |
++| `make up` | Sobe o container |
++| `make down` | Para o container |
++| `make shell` | Abre um shell dentro do container |
++| `make analyze` | Executa a análise estática (`dart analyze`) |
++| `make format` | Formata o código (`dart format`) |
++| `make fix` | Aplica correções automáticas sugeridas pelo linter |
++| `make gen` | Gera código (Freezed, Riverpod, etc.) via `build_runner` |
++| `make test` | Executa os testes em `test/` |
++| `make new-feature name="X"` | Gera uma nova feature completa (Feature + DDD, lib + testes) |
++| `make build-app` | Gera builds de release (Android + Linux) |
++| `make clean` | Remove o container e os caches |
+ 
+ ## `make new-feature`
+ 
+-Gera a estrutura Clean Architecture completa (`data` / `domain` / `presentation`)
+-para uma nova feature, junto com o espelho de testes correspondente em `test/`.
++Gera a estrutura padrão do template (`data` / `domain` / `presentation`) para uma nova feature, junto com o espelho de testes correspondente em `test/`.
+ 
+ ```bash
+ make new-feature name="Estoque"
+@@ -26,4 +25,4 @@ make new-feature name="Exportação de produtos"
+ make new-feature              # pergunta o nome interativamente
+ ```
+ 
+-Veja o detalhe de tudo o que é gerado em [Estrutura do Projeto](estrutura-do-projeto.md).
+\ No newline at end of file
++O que é gerado, e por quê, está detalhado em [Estrutura do Projeto](estrutura-do-projeto.md). Se a feature crescer e precisar de mais camadas (`usecase`, domain service), veja [Usecases e Domain Services](usecases-e-domain-services.md) — isso não é gerado automaticamente, é uma decisão que você toma quando a lógica realmente pedir.
+\ No newline at end of file
+diff --git a/docs/estrutura-do-projeto.md b/docs/estrutura-do-projeto.md
+index 42dfc70..19c45c8 100644
+--- a/docs/estrutura-do-projeto.md
++++ b/docs/estrutura-do-projeto.md
+@@ -1,38 +1,44 @@
+ # Estrutura do Projeto
+ 
+-Este template segue **Clean Architecture** (camadas `data` / `domain` /
+-`presentation`) combinada com **feature-first**: cada funcionalidade do app
+-vive isolada em `lib/src/features/<feature>/`, com sua própria fatia de
+-`data`, `domain` e `presentation` — nada é compartilhado entre features por
+-padrão, a não ser o que for movido deliberadamente para `shared/`.
+-
+-## Por que essa estrutura
+-
+-- **`data/datasources`** — fala com o mundo externo (API via Dio, etc.). Uma
+-  feature sem dependência externa (como a `home` deste template) pode usar
+-  uma fonte de dados local em vez de remota — o padrão se adapta à
+-  necessidade real da feature, não o contrário.
+-- **`data/dtos`** — representação bruta dos dados (JSON/Map), isolada do
+-  domínio.
+-- **`data/repositories`** — implementação concreta, faz a ponte DTO → Entity.
+-- **`domain/entities`** — objetos de negócio puros, sem dependência de
+-  serialização nem de Flutter.
+-- **`domain/repositories`** — o contrato (interface) que `data/repositories`
+-  implementa. O domínio depende apenas dessa abstração, nunca da
+-  implementação concreta.
+-- **`domain/usecases`** — uma ação de negócio por classe (Single
+-  Responsibility). Hoje costuma ser um repasse simples ao repository, mas é
+-  aqui que entra qualquer regra adicional no futuro.
+-- **`presentation/controllers`** — o `Notifier` do Riverpod, orquestra
+-  usecases e expõe o estado para a UI.
+-- **`presentation/pages`** — a tela.
+-- **`presentation/widgets`** — pedaços de UI extraídos da página, para
+-  manter a página enxuta e os widgets testáveis isoladamente.
+-
+-Todo domínio, do primeiro ao centésimo, segue exatamente essa mesma base —
+-um dev sênior desenha o padrão uma vez, e qualquer pessoa do time que rodar
+-`make new-feature` reproduz esse mesmo padrão sem precisar decidir nada.
+-Veja [Comandos Make](comandos-make.md) para gerar uma feature nova.
++O Flutter Skeleton organiza o código por **Feature + DDD** (Domain-Driven Design): cada funcionalidade do app vive isolada em `lib/src/features/<feature>/`, com sua própria fatia de `data`, `domain` e `presentation`. Nada é compartilhado entre features por padrão — só o que for movido deliberadamente para `shared/`.
++
++A estrutura gerada é **enxuta de propósito**. Ela cobre o que toda feature precisa (fonte de dados, entidade, contrato, tela, estado), sem forçar camadas extras (`usecases`, domain services) que a maioria das telas simples não precisa. Quando uma feature crescer o suficiente para justificar isso, veja [Usecases e Domain Services](usecases-e-domain-services.md).
++
++## As três camadas
++
++| Camada | Pastas | Responsabilidade |
++|---|---|---|
++| `data` | `datasources/`, `repositories/` | Busca e converte dados — de uma API, de um banco local, ou de onde fizer sentido |
++| `domain` | `entities/`, `repositories/` | O núcleo de negócio: objetos puros e o contrato que `data` implementa |
++| `presentation` | `notifiers/`, `pages/`, `widgets/` | Estado (via Riverpod) e UI |
++
++### `data/datasources`
++
++Fala com o mundo externo: uma API via Dio, um banco local, um arquivo, etc. Uma feature sem dependência externa (como a `home` deste template) pode usar uma fonte de dados **local** em vez de remota — a estrutura se adapta à necessidade real da feature, não o contrário.
++
++### `data/repositories`
++
++Implementação concreta de `domain/repositories`. Busca o dado bruto no datasource e já devolve a `Entity` pronta — a conversão (JSON/Map → Entity) acontece aqui mesmo, sem precisar de uma classe de DTO separada. Se o payload da sua API for complexo o suficiente para justificar uma camada própria de conversão, você pode adicionar isso depois; não é o padrão default.
++
++### `domain/entities`
++
++Objetos de negócio puros: sem anotação de serialização, sem depender de Flutter, sem depender de `data` ou `presentation`.
++
++### `domain/repositories`
++
++O contrato (interface) que `data/repositories` implementa. O domínio depende **só** dessa abstração — nunca da implementação concreta. É o que torna o `Notifier` testável sem precisar de banco nem de HTTP: basta mockar o repository.
++
++### `presentation/notifiers`
++
++O `AsyncNotifier` do Riverpod. Chama o repository (direto, na maioria dos casos) e expõe o estado para a UI. Não deve conter regra de negócio — isso é papel do `domain`.
++
++### `presentation/pages`
++
++A tela.
++
++### `presentation/widgets`
++
++Pedaços de UI extraídos da página, mantendo `pages/` enxuta e cada widget testável isoladamente.
+ 
+ ## Árvore completa
+ 
+@@ -40,7 +46,7 @@ Veja [Comandos Make](comandos-make.md) para gerar uma feature nova.
+ lib/
+ ├── main.dart
+ └── src/
+-    ├── core/                       # tema, router, di, config
++    ├── core/                       # tema, router, DI, config
+     │   ├── router/
+     │   │   └── app_router.dart
+     │   └── theme/
+@@ -50,25 +56,21 @@ lib/
+     │       ├── data/
+     │       │   ├── datasources/
+     │       │   │   └── home_local_datasource.dart
+-    │       │   ├── dtos/
+-    │       │   │   └── home_dto.dart
+     │       │   └── repositories/
+     │       │       └── home_repository_impl.dart
+     │       ├── domain/
+     │       │   ├── entities/
+     │       │   │   └── home_entity.dart
+-    │       │   ├── repositories/
+-    │       │   │   └── home_repository.dart
+-    │       │   └── usecases/
+-    │       │       └── get_home_data_usecase.dart
++    │       │   └── repositories/
++    │       │       └── home_repository.dart
+     │       └── presentation/
+-    │           ├── controllers/
++    │           ├── notifiers/
+     │           │   └── home_notifier.dart
+     │           ├── pages/
+     │           │   └── home_page.dart
+     │           └── widgets/
+     │               └── home_header_widget.dart
+-    └── shared/                     # widgets, extensions, models comuns
++    └── shared/                     # widgets, extensions, models comuns (vazio até a 1ª feature precisar)
+ 
+ test/
+ ├── app_test.dart
+@@ -82,19 +84,15 @@ test/
+ │       ├── data/
+ │       │   ├── datasources/
+ │       │   │   └── home_local_datasource_test.dart
+-│       │   ├── dtos/
+-│       │   │   └── home_dto_test.dart
+ │       │   └── repositories/
+ │       │       └── home_repository_impl_test.dart
+ │       ├── domain/
+ │       │   ├── entities/
+ │       │   │   └── home_entity_test.dart
+-│       │   ├── repositories/       # sem teste — é só uma interface,
+-│       │   │                       # sem lógica própria
+-│       │   └── usecases/
+-│       │       └── get_home_data_usecase_test.dart
++│       │   └── repositories/       # sem teste — é só uma interface,
++│       │                           # sem lógica própria
+ │       └── presentation/
+-│           ├── controllers/
++│           ├── notifiers/
+ │           │   └── home_notifier_test.dart
+ │           ├── pages/
+ │           │   └── home_page_test.dart
+@@ -106,12 +104,27 @@ integration_test/
+ └── app_test.dart
+ ```
+ 
++## A feature `home`: exemplo de referência
++
++A feature `home`, incluída no template, existe para **demonstrar o fluxo completo em código real** — não é só um placeholder. Ela usa um datasource local (não uma API), porque a tela de boas-vindas não depende de nada externo; isso já ilustra que a estrutura se adapta à necessidade da feature, não o contrário.
++
++Quer entender como as camadas conversam entre si? A ordem de chamada é sempre a mesma:
++
++```
++Page → Notifier → Repository (interface) → RepositoryImpl → DataSource
++```
++
++E o retorno (a `Entity`) sobe pela mesma cadeia, camada a camada, até chegar na UI.
++
+ ## `test/` vs `integration_test/`
+ 
+-- **`test/`** roda em ambiente simulado (`flutter_test`) — rápido, sem
+-  precisar de device/emulador. É onde vive a maioria dos testes (unidade e
+-  widget).
+-- **`integration_test/`** sobe o app de verdade (motor de renderização
+-  real — device, emulador ou build desktop/web). Deve ficar enxuto: fluxos
+-  de ponta a ponta que atravessam mais de uma feature, não uma repetição
+-  dos testes de widget que já existem em `test/`.
+\ No newline at end of file
++- **`test/`** roda em ambiente simulado (`flutter_test`) — rápido, sem precisar de device ou emulador. É onde vive a maioria dos testes (unidade e widget).
++- **`integration_test/`** sobe o app de verdade (motor de renderização real — device, emulador ou build desktop/web). Deve ficar enxuto: fluxos de ponta a ponta que atravessam mais de uma feature, não uma repetição dos testes de widget que já existem em `test/`.
++
++## Gerando uma feature nova
++
++```bash
++make new-feature name="Estoque"
++```
++
++Isso gera essa mesma estrutura (lib + testes espelhados) para a feature `estoque`. Veja [Comandos Make](comandos-make.md) para detalhes.
+\ No newline at end of file
+diff --git a/docs/execucao-local.md b/docs/execucao-local.md
+index 5dc142d..e9e442c 100644
+--- a/docs/execucao-local.md
++++ b/docs/execucao-local.md
+@@ -1,8 +1,8 @@
+-# Execução local
++# Execução Local
+ 
+-Depois de subir o ambiente (`make up` e `make shell`), você pode rodar o projeto diretamente com os comandos do Flutter, escolhendo a plataforma desejada.
++Depois de subir o ambiente (`make up` e `make shell`), você roda o projeto normalmente com os comandos do Flutter, escolhendo a plataforma desejada.
+ 
+-## Listar dispositivos/plataformas disponíveis
++## Listar dispositivos e plataformas disponíveis
+ 
+ ```bash
+ flutter devices
+@@ -14,15 +14,15 @@ flutter devices
+ flutter run -d android
+ ```
+ 
+-## Linux (Desktop)
++## Linux (desktop)
+ 
+-> O compartilhamento do X11 com o container já vem configurado no `compose.yml`
+-> (`DISPLAY`, socket `/tmp/.X11-unix` e `network_mode: host`). Você só precisa
+-> garantir que o container tenha permissão para acessar o servidor X11 do host:
+->
+-> ```bash
+-> xhost +local:docker
+-> ```
++O compartilhamento do X11 com o container já vem configurado no `compose.yml` (`DISPLAY`, socket `/tmp/.X11-unix` e `network_mode: host`). Você só precisa garantir que o container tenha permissão para acessar o servidor X11 do host:
++
++```bash
++xhost +local:docker
++```
++
++Depois:
+ 
+ ```bash
+ flutter run -d linux
+@@ -36,43 +36,32 @@ flutter run -d chrome
+ 
+ ## iOS
+ 
+-> Requer Xcode instalado nativamente em um Mac. Não é possível rodar via
+-> Docker/Linux — este comando deve ser executado fora do container, em uma
+-> máquina macOS com o toolchain do Xcode configurado.
++> Requer Xcode instalado nativamente em um Mac. Não roda via Docker/Linux — execute fora do container, numa máquina macOS com o toolchain do Xcode configurado.
+ 
+ ```bash
+ flutter run -d ios
+ ```
+ 
+-## macOS (Desktop)
++## macOS (desktop)
+ 
+-> Requer Xcode instalado nativamente em um Mac. Assim como o iOS, não roda
+-> via Docker/Linux — execute fora do container, em uma máquina macOS.
++> Requer Xcode instalado nativamente em um Mac. Assim como o iOS, não roda via Docker/Linux — execute fora do container.
+ 
+ ```bash
+ flutter run -d macos
+ ```
+ 
+-## Windows (Desktop)
++## Windows (desktop)
+ 
+-> Requer Visual Studio com "Desktop development with C++" instalado
+-> nativamente no Windows. Não roda via Docker/Linux — execute fora do
+-> container, em uma máquina Windows.
++> Requer Visual Studio com "Desktop development with C++" instalado nativamente no Windows. Não roda via Docker/Linux — execute fora do container.
+ 
+ ```bash
+ flutter run -d windows
+ ```
+ 
+-> **Nota:** iOS, macOS e Windows podem ser selecionados em `PLATFORMS`
+-> durante a criação do projeto (`install.sh`) para fazer parte do escopo do
+-> app e dos builds de CI (ver [Build Multi-plataforma](ci-cd.md)), mas o
+-> `flutter run` local para elas precisa acontecer fora do ambiente Docker
+-> deste template, na máquina nativa correspondente.
++> **Nota:** iOS, macOS e Windows podem ser selecionados em `PLATFORMS` durante a criação do projeto (`install.sh`) para fazer parte do escopo do app e dos builds de CI (veja [CI/CD](ci-cd.md)) — mas o `flutter run` local para essas três plataformas precisa acontecer fora do ambiente Docker deste template, direto na máquina nativa correspondente.
+ 
+ ## Rodando em modo release
+ 
+-Para testar uma build de produção localmente:
+-
+ ```bash
+ flutter run --release -d <plataforma>
+ ```
+@@ -81,8 +70,7 @@ Substitua `<plataforma>` por `android`, `linux`, `chrome`, `ios`, `macos` ou `wi
+ 
+ ## Testes de integração
+ 
+-Diferente do `flutter run`, os testes de `integration_test/` sobem o app
+-real dentro do próprio comando de teste:
++Diferente do `flutter run`, os testes de `integration_test/` sobem o app real dentro do próprio comando de teste:
+ 
+ ```bash
+ flutter test integration_test/app_test.dart -d linux
+diff --git a/install.sh b/install.sh
+index 88e54ae..610bf54 100644
+--- a/install.sh
++++ b/install.sh
+@@ -1,22 +1,19 @@
+ #!/usr/bin/env bash
+ #
+-# Bootstrap para projetos Flutter baseados neste template Docker.
+-#
+-# Uso recomendado:
+-# bash <(curl -fsSL https://raw.githubusercontent.com/Diego-Brocanelli/flutter-skeleton/main/install.sh)
++# Bootstrap para Flutter Skeleton
+ 
+ set -euo pipefail
+ 
+-# ---- Configuração ----------------------------------------------------------
++# Configuração
+ REPO_URL="https://github.com/Diego-Brocanelli/flutter-skeleton.git"
+ 
+-# ---- Helpers ----------------------------------------------------------------
++# Helpers
+ info() { printf "\033[1;34m>>\033[0m %s\n" "$1"; }
+ warn() { printf "\033[1;33m!!\033[0m %s\n" "$1"; }
+ error() { printf "\033[1;31mxx\033[0m %s\n" "$1" >&2; }
+ 
+ require_cmd() {
+-  command -v "$1" >/dev/null 2>&1 || { error "Comando '$1' não encontrado. Instale-o antes de continuar."; exit 1; }
++  command -v "$1" >/dev/null 2>&1 || { error "Comando '$1' não encontrado."; exit 1; }
+ }
+ 
+ require_cmd git
+@@ -24,42 +21,30 @@ require_cmd docker
+ require_cmd make
+ 
+ echo "=========================================="
+-echo " Flutter Docker Template - Bootstrap"
++echo " Flutter Skeleton - Bootstrap"
+ echo "=========================================="
+-echo ""
+ 
+-# ---- Nome do projeto ---------------------------------------------------------
++# Nome do projeto
+ read -rp "Nome do projeto: " RAW_NAME
+-if [ -z "${RAW_NAME}" ]; then
+-  error "Nome do projeto é obrigatório."
+-  exit 1
+-fi
+-if [ -d "${RAW_NAME}" ]; then
+-  error "Já existe um diretório chamado '${RAW_NAME}' aqui."
+-  exit 1
+-fi
+-
+-# Normalização dos nomes
++if [ -z "${RAW_NAME}" ]; then error "Nome obrigatório."; exit 1; fi
++if [ -d "${RAW_NAME}" ]; then error "Diretório já existe."; exit 1; fi
++
+ CONTAINER_NAME=$(echo "${RAW_NAME}" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9_.-' '-' | sed -E 's/^[-.]+//; s/[-.]+$//; s/-+/-/g')
+ DART_PROJECT_NAME=$(echo "${RAW_NAME}" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9' '_' | sed -E 's/^_+//; s/_+$//; s/_+/_/g')
+ 
+-if [ -z "${DART_PROJECT_NAME}" ] || [[ "${DART_PROJECT_NAME}" =~ ^[0-9] ]]; then
+-  DART_PROJECT_NAME="app_${DART_PROJECT_NAME}"
+-fi
+-
+-info "Diretório: ${RAW_NAME}"
+-info "Container/Imagem: ${CONTAINER_NAME}"
+-info "Pacote Flutter: ${DART_PROJECT_NAME}"
++info "Projeto: ${RAW_NAME}"
++info "Container: ${CONTAINER_NAME}"
++info "Pacote: ${DART_PROJECT_NAME}"
+ 
+-# ---- Clonar o template -------------------------------------------------------
++# Clonar
+ info "Clonando template..."
+ git clone --quiet "${REPO_URL}" "${RAW_NAME}"
+ cd "${RAW_NAME}"
+ 
+-# ---- Escolha de plataformas --------------------------------------------------
++# Plataformas
+ echo ""
+-echo "Quais plataformas o projeto deve suportar? (separadas por espaço)"
+-echo " 1) android   2) ios   3) web   4) linux   5) windows   6) macos"
++echo "Plataformas (separadas por espaço):"
++echo "1)android 2)ios 3)web 4)linux 5)windows 6)macos"
+ read -rp "Opções: " OPTS
+ 
+ PLATFORMS=""
+@@ -71,139 +56,71 @@ for opt in ${OPTS}; do
+     4) PLATFORMS="${PLATFORMS}linux," ;;
+     5) PLATFORMS="${PLATFORMS}windows," ;;
+     6) PLATFORMS="${PLATFORMS}macos," ;;
+-    *) warn "Opção inválida ignorada: ${opt}" ;;
+   esac
+ done
+ PLATFORMS="${PLATFORMS%,}"
+-if [ -z "${PLATFORMS}" ]; then
+-  PLATFORMS="android,linux"
+-fi
++[ -z "${PLATFORMS}" ] && PLATFORMS="android,linux"
+ 
+-info "Plataformas selecionadas: ${PLATFORMS}"
+-
+-# ---- Persistir configuração -------------------------------------------------
++# .env
+ cat > .env <<EOF
++APP_ENV=development
+ PROJECT_NAME=${CONTAINER_NAME}
+ PLATFORMS=${PLATFORMS}
+ EOF
+ 
+ cat > .env.example <<EOF
++APP_ENV=development
+ PROJECT_NAME=${CONTAINER_NAME}
+ PLATFORMS=${PLATFORMS}
+ EOF
+ 
+-# ---- Build e subida do container --------------------------------------------
++# Docker
+ info "Buildando imagem Docker..."
+ make build
+ 
+ info "Subindo container..."
+ make up
++sleep 4
+ 
+-sleep 3
+-
+-# ---- Criação do projeto Flutter ---------------------------------------------
+-info "Criando projeto Flutter..."
++# Flutter create
++info "Executando flutter create..."
+ docker compose exec flutter-dev flutter create --platforms="${PLATFORMS}" --project-name "${DART_PROJECT_NAME}" .
+ 
+-# ---- Aplicar estrutura avançada e dependências ---------------------------
+-info "Aplicando estrutura avançada e dependências modernas..."
+-
+-info "DEBUG: Diretório atual = $(pwd)"
+-
+-# Copiar estrutura do template (se existir)
+-if [ -d "template/lib" ]; then
+-  info "Copiando estrutura do template..."
+-  cp -r template/lib/* lib/ 2>/dev/null || true
+-  info "Estrutura do template aplicada com sucesso."
+-else
+-  warn "Pasta 'template/lib' não encontrada."
+-fi
+-
+-# Copiar testes de unidade/widget do template (substitui o
+-# test/widget_test.dart padrão gerado pelo `flutter create`)
+-if [ -d "template/test" ]; then
+-  info "Copiando testes (unit/widget) do template..."
+-  rm -f test/widget_test.dart
+-  cp -r template/test/* test/ 2>/dev/null || true
+-  info "Testes aplicados com sucesso."
+-else
+-  warn "Pasta 'template/test' não encontrada."
+-fi
+-
+-# Copiar testes de integração do template (o `flutter create` não gera
+-# a pasta integration_test/ por padrão)
+-if [ -d "template/integration_test" ]; then
+-  info "Copiando testes de integração do template..."
+-  mkdir -p integration_test
+-  cp -r template/integration_test/* integration_test/ 2>/dev/null || true
+-  info "Testes de integração aplicados com sucesso."
+-else
+-  warn "Pasta 'template/integration_test' não encontrada."
+-fi
+-
+-rm -rf template
+-
+-# Substituir o placeholder __PACKAGE_NAME__ pelo nome real do pacote
+-# (definido só agora, pelo `flutter create` acima) nos imports dos
+-# arquivos de teste. Os arquivos em lib/ não usam esse placeholder
+-# (usam import relativo de propósito, para não depender do nome do
+-# pacote), mas os arquivos de teste em test/ e integration_test/ importam
+-# código de lib/ via "package:", então precisam saber o nome real.
+-info "Ajustando nome do pacote nos imports dos testes..."
+-grep -rl "__PACKAGE_NAME__" test integration_test 2>/dev/null | while read -r file; do
+-  sed -i "s/__PACKAGE_NAME__/${DART_PROJECT_NAME}/g" "$file"
+-done
++# Aplicar template
++info "Aplicando estrutura do template (com src/)..."
+ 
+-# ====================== COMANDOS DENTRO DO CONTAINER ======================
+-info "Instalando dependências e configurando o projeto..."
++rm -rf lib/test lib/main.dart
++cp -r template/lib/* lib/
++cp -r template/test/* test/ 2>/dev/null || true
++cp -r template/integration_test/* integration_test/ 2>/dev/null || true
+ 
+-# Dependências principais
++# Dependências
++info "Instalando dependências..."
+ docker compose exec flutter-dev flutter pub add \
+   flutter_riverpod riverpod riverpod_annotation \
+   go_router \
+-  dio retrofit \
+-  json_annotation \
+-  logger \
+   flutter_native_splash flutter_launcher_icons
+ 
+-# Dependências de desenvolvimento
+ docker compose exec flutter-dev flutter pub add --dev \
+-  build_runner \
+-  riverpod_generator \
+-  retrofit_generator \
+-  freezed \
+-  json_serializable \
+-  mocktail \
+-  very_good_analysis
+-
+-# integration_test é uma dependência de SDK (faz parte do próprio Flutter,
+-# não do pub.dev), por isso precisa dessa sintaxe especial em vez de entrar
+-# na lista acima. flutter_test já vem incluído por padrão pelo `flutter
+-# create`, então não precisa ser adicionado de novo aqui.
+-info "Adicionando dependência de SDK: integration_test..."
++  build_runner riverpod_generator mocktail very_good_analysis
++
+ docker compose exec flutter-dev flutter pub add 'dev:integration_test:{"sdk":"flutter"}'
+ 
+-# Configurações visuais (comentado temporariamente até configurar pubspec)
+-# info "Configurando Native Splash e Launcher Icons..."
+-# docker compose exec flutter-dev flutter pub run flutter_native_splash:create
+-# docker compose exec flutter-dev flutter pub run flutter_launcher_icons
++# Build runner
++info "Gerando código..."
++docker compose exec flutter-dev flutter pub run build_runner build --delete-conflicting-outputs || true
+ 
+-# Geração de código
+-info "Gerando código (Freezed, Riverpod, etc.)..."
+-docker compose exec flutter-dev flutter pub run build_runner build --delete-conflicting-outputs
++# Finalização
++info "Limpando arquivos temporários..."
++rm -rf template
+ 
+-# ---- Finalização ------------------------------------------------------------
+-info "Removendo histórico git do template..."
++info "Inicializando repositório git..."
+ rm -rf .git
+ git init --quiet -b main
+ 
+ echo ""
+ info "✅ Projeto '${RAW_NAME}' criado com sucesso!"
+-info "Container: ${CONTAINER_NAME} | Pacote: ${DART_PROJECT_NAME}"
+-info "Stack: Riverpod + go_router + Freezed"
+-echo ""
+-info "Para começar a desenvolver:"
+-echo "   cd ${RAW_NAME}"
+-echo "   make shell"
++echo "cd ${RAW_NAME} && make shell"
+ echo ""
++
+ make shell
+\ No newline at end of file
+diff --git a/scripts/new_feature.sh b/scripts/new_feature.sh
+index c54886b..91e24ef 100644
+--- a/scripts/new_feature.sh
++++ b/scripts/new_feature.sh
+@@ -1,646 +1,163 @@
+ #!/usr/bin/env bash
+ #
+-# Cria a estrutura Clean Architecture completa de uma nova feature
+-# dentro de lib/src/features/<dominio>, junto com o espelho de testes em
+-# test/features/<feature> — incluindo TODAS as subpastas (data/domain/
+-# presentation com suas respectivas camadas), sempre, sem versão "enxuta".
+-#
+-# Isso é proposital: a ideia é que toda feature, da primeira à centésima,
+-# siga exatamente a mesma base. Um dev sênior desenha o padrão uma vez
+-# (aqui), e qualquer dev júnior que rodar `make new-feature` reproduz esse
+-# mesmo padrão sem precisar decidir nada.
+-#
+-#   lib/src/features/<dominio>/
+-#   ├── data/
+-#   │   ├── datasources/<dominio>_remote_datasource.dart
+-#   │   ├── dtos/<dominio>_dto.dart
+-#   │   └── repositories/<dominio>_repository_impl.dart
+-#   ├── domain/
+-#   │   ├── entities/<dominio>_entity.dart
+-#   │   ├── repositories/<dominio>_repository.dart
+-#   │   └── usecases/get_<dominio>_data_usecase.dart
+-#   └── presentation/
+-#       ├── controllers/<dominio>_notifier.dart
+-#       ├── pages/<dominio>_page.dart
+-#       └── widgets/<dominio>_header_widget.dart
+-#
+-#   test/features/<feature>/  (mesmo espelho, exceto domain/repositories/
+-#   — é só uma interface, sem lógica própria para testar)
+-#
+-# Uso:
+-#   scripts/new_feature.sh "Nome da Feature"
+-#
+-# Se nenhum argumento for passado, o script pergunta interativamente.
++# Cria a estrutura básica de uma nova feature no Skeleton
++# Uso: ./scripts/new_feature.sh "Nome da Feature"
+ 
+ set -euo pipefail
+ 
+-# ---------------------------------------------------------------------------
+-# Config
+-# ---------------------------------------------------------------------------
+-
+-FEATURES_DIR="lib/src/features"
+-TEST_FEATURES_DIR="test/features"
+-
+-# ---------------------------------------------------------------------------
+-# Helpers de output
+-# ---------------------------------------------------------------------------
+-
+-red() { printf '\033[0;31m%s\033[0m\n' "$1"; }
+-green() { printf '\033[0;32m%s\033[0m\n' "$1"; }
+-yellow() { printf '\033[1;33m%s\033[0m\n' "$1"; }
+-
+-# ---------------------------------------------------------------------------
+-# Helpers de nomenclatura
+-# ---------------------------------------------------------------------------
+-
+-# Converte texto livre em slug kebab-case, sem acentos/caracteres especiais.
+-# Ex.: "Exportação de Produtos" -> "exportacao-de-produtos"
+-slugify() {
+-  local input="$1"
+-  local output
+-
+-  output=$(printf '%s' "$input" | tr '[:upper:]' '[:lower:]')
+-
+-  # Remove acentos via iconv, forçando um locale UTF-8. Sem isso, em
+-  # containers com locale POSIX/C, o transliterate falha silenciosamente.
+-  if command -v iconv >/dev/null 2>&1; then
+-    output=$(LC_ALL=C.utf8 iconv -f UTF-8 -t ASCII//TRANSLIT <<< "$output" 2>/dev/null \
+-      || printf '%s' "$output")
+-  fi
+-
+-  output=$(printf '%s' "$output" | sed -E 's/[^a-z0-9]+/-/g')
+-  output=$(printf '%s' "$output" | sed -E 's/-+/-/g; s/^-+//; s/-+$//')
+-
+-  printf '%s' "$output"
+-}
+-
+-# Converte um slug kebab-case em PascalCase.
+-# Ex.: "exportacao-de-produtos" -> "ExportacaoDeProdutos"
+-to_pascal_case() {
+-  local slug="$1"
+-  local pascal=""
+-  local part
+-
+-  IFS='-' read -ra parts <<< "$slug"
+-  for part in "${parts[@]}"; do
+-    pascal+="$(tr '[:lower:]' '[:upper:]' <<< "${part:0:1}")${part:1}"
+-  done
+-
+-  printf '%s' "$pascal"
+-}
+-
+-# Converte PascalCase em camelCase (primeira letra minúscula).
+-# Ex.: "ExportacaoDeProdutos" -> "exportacaoDeProdutos"
+-to_camel_case() {
+-  local pascal="$1"
+-  printf '%s%s' "$(tr '[:upper:]' '[:lower:]' <<< "${pascal:0:1}")" "${pascal:1}"
+-}
+-
+-# Lê o campo "name:" do pubspec.yaml na raiz do projeto, se existir.
+-# Usado para montar os imports "package:<nome>/..." nos testes gerados.
+-detect_package_name() {
+-  if [[ -f "pubspec.yaml" ]]; then
+-    grep -E '^name:' pubspec.yaml | head -n1 | sed -E 's/^name:[[:space:]]*//' | tr -d '"'"'"' \r'
+-  fi
+-}
+-
+-# ---------------------------------------------------------------------------
+-# Input
+-# ---------------------------------------------------------------------------
+-
+-RAW_NAME="${1:-}"
+-
+-if [[ -z "$RAW_NAME" ]]; then
+-  read -rp "Nome da feature: " RAW_NAME
+-fi
+-
+-if [[ -z "$RAW_NAME" ]]; then
+-  red "❌ Nome da feature não pode ser vazio."
++if [ -z "${1:-}" ]; then
++  echo "Uso: ./scripts/new_feature.sh \"Nome da Feature\""
++  echo "Ex:  ./scripts/new_feature.sh auth"
+   exit 1
+ fi
+ 
+-SLUG=$(slugify "$RAW_NAME")
++RAW_NAME="$1"
++SLUG=$(echo "$RAW_NAME" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g' | sed -E 's/^-+|-+$//g')
++PASCAL=$(echo "$SLUG" | sed -E 's/(^|-)(.)/\U\2/g')
+ 
+-if [[ -z "$SLUG" ]]; then
+-  red "❌ Não foi possível gerar um nome válido a partir de '$RAW_NAME'."
+-  exit 1
+-fi
++FEATURE_DIR="lib/src/features/$SLUG"
+ 
+-PASCAL_NAME=$(to_pascal_case "$SLUG")
+-CAMEL_NAME=$(to_camel_case "$PASCAL_NAME")
+-FEATURE_DIR="${FEATURES_DIR}/${SLUG}"
+-TEST_FEATURE_DIR="${TEST_FEATURES_DIR}/${SLUG}"
+-PACKAGE_NAME=$(detect_package_name)
+-PACKAGE_NAME="${PACKAGE_NAME:-<seu_pacote>}"
++echo "🚀 Criando feature: $SLUG"
+ 
+-# ---------------------------------------------------------------------------
+-# Validação
+-# ---------------------------------------------------------------------------
++mkdir -p "$FEATURE_DIR"/data/{datasources,dtos,repositories}
++mkdir -p "$FEATURE_DIR"/domain/{entities,repositories,usecases}
++mkdir -p "$FEATURE_DIR"/presentation/{controllers,pages,widgets}
+ 
+-if [[ -d "$FEATURE_DIR" ]]; then
+-  red "❌ A feature '${SLUG}' já existe em ${FEATURE_DIR}"
+-  exit 1
+-fi
+-
+-if [[ -d "$TEST_FEATURE_DIR" ]]; then
+-  red "❌ Já existem testes para a feature '${SLUG}' em ${TEST_FEATURE_DIR}"
+-  exit 1
+-fi
+-
+-if [[ "$PACKAGE_NAME" == "<seu_pacote>" ]]; then
+-  yellow "⚠️  Não encontrei 'name:' em pubspec.yaml para detectar o nome do"
+-  yellow "   pacote. Os imports 'package:...' gerados nos testes vão usar"
+-  yellow "   '<seu_pacote>' como placeholder — troque manualmente depois."
+-fi
++# Entity
++cat > "$FEATURE_DIR/domain/entities/${SLUG}_entity.dart" << EOF
++class ${PASCAL}Entity {
++  const ${PASCAL}Entity({
++    required this.id,
++    required this.name,
++  });
+ 
+-# ---------------------------------------------------------------------------
+-# Geração da estrutura lib/
+-# ---------------------------------------------------------------------------
+-
+-yellow "Criando feature '${SLUG}' a partir de '${RAW_NAME}'..."
+-
+-mkdir -p "${FEATURE_DIR}/data/datasources"
+-mkdir -p "${FEATURE_DIR}/data/dtos"
+-mkdir -p "${FEATURE_DIR}/data/repositories"
+-mkdir -p "${FEATURE_DIR}/domain/entities"
+-mkdir -p "${FEATURE_DIR}/domain/repositories"
+-mkdir -p "${FEATURE_DIR}/domain/usecases"
+-mkdir -p "${FEATURE_DIR}/presentation/controllers"
+-mkdir -p "${FEATURE_DIR}/presentation/pages"
+-mkdir -p "${FEATURE_DIR}/presentation/widgets"
+-
+-# ---- data/datasources -------------------------------------------------------
+-
+-cat > "${FEATURE_DIR}/data/datasources/${SLUG}_remote_datasource.dart" <<EOF
+-/// Fonte de dados remota da feature "${RAW_NAME}".
+-///
+-/// Responsabilidade: falar com o mundo externo (API REST via Dio, etc.).
+-/// Não deve conter regra de negócio — só busca/envia dados brutos.
+-class ${PASCAL_NAME}RemoteDataSource {
+-  const ${PASCAL_NAME}RemoteDataSource();
+-
+-  // TODO: injete aqui o cliente HTTP (ex.: Dio) via construtor.
+-
+-  Future<Map<String, dynamic>> fetch${PASCAL_NAME}Data() async {
+-    // TODO: implementar a chamada real à API.
+-    throw UnimplementedError();
+-  }
++  final String id;
++  final String name;
+ }
+ EOF
+ 
+-# ---- data/dtos ---------------------------------------------------------------
+-
+-cat > "${FEATURE_DIR}/data/dtos/${SLUG}_dto.dart" <<EOF
+-import '../../domain/entities/${SLUG}_entity.dart';
+-
+-/// Representação bruta dos dados de "${RAW_NAME}" vindos da API (JSON).
+-///
+-/// Fica isolado de propósito: mudanças no formato da API não devem vazar
+-/// para \`domain/entities\`.
+-class ${PASCAL_NAME}Dto {
+-  const ${PASCAL_NAME}Dto({required this.id});
+-
+-  factory ${PASCAL_NAME}Dto.fromJson(Map<String, dynamic> json) {
+-    return ${PASCAL_NAME}Dto(id: json['id'] as String);
+-  }
+-
+-  final String id;
++# Repository (abstração)
++cat > "$FEATURE_DIR/domain/repositories/${SLUG}_repository.dart" << EOF
++import '../entities/${SLUG}_entity.dart';
+ 
+-  /// Converte o DTO (formato de API) para a entidade de domínio.
+-  ${PASCAL_NAME}Entity toEntity() {
+-    return ${PASCAL_NAME}Entity(id: id);
+-  }
++abstract class ${PASCAL}Repository {
++  Future<${PASCAL}Entity> get${PASCAL}Data();
+ }
+ EOF
+ 
+-# ---- data/repositories --------------------------------------------------------
+-
+-cat > "${FEATURE_DIR}/data/repositories/${SLUG}_repository_impl.dart" <<EOF
++# Repository Implementation
++cat > "$FEATURE_DIR/data/repositories/${SLUG}_repository_impl.dart" << EOF
+ import 'package:riverpod/riverpod.dart';
+ 
+ import '../../domain/entities/${SLUG}_entity.dart';
+ import '../../domain/repositories/${SLUG}_repository.dart';
+ import '../datasources/${SLUG}_remote_datasource.dart';
+-import '../dtos/${SLUG}_dto.dart';
+ 
+-final ${CAMEL_NAME}RepositoryProvider = Provider<${PASCAL_NAME}Repository>((ref) {
+-  return ${PASCAL_NAME}RepositoryImpl(const ${PASCAL_NAME}RemoteDataSource());
++final ${SLUG}RepositoryProvider = Provider<${PASCAL}Repository>((ref) {
++  return ${PASCAL}RepositoryImpl(const ${PASCAL}RemoteDataSource());
+ });
+ 
+-/// Implementação concreta de [${PASCAL_NAME}Repository].
+-///
+-/// Orquestra a fonte de dados (datasource) e converte DTO -> Entity antes
+-/// de devolver para o domínio.
+-class ${PASCAL_NAME}RepositoryImpl implements ${PASCAL_NAME}Repository {
+-  const ${PASCAL_NAME}RepositoryImpl(this._dataSource);
++class ${PASCAL}RepositoryImpl implements ${PASCAL}Repository {
++  const ${PASCAL}RepositoryImpl(this._dataSource);
+ 
+-  final ${PASCAL_NAME}RemoteDataSource _dataSource;
++  final ${PASCAL}RemoteDataSource _dataSource;
+ 
+   @override
+-  Future<${PASCAL_NAME}Entity> get${PASCAL_NAME}Data() async {
+-    final json = await _dataSource.fetch${PASCAL_NAME}Data();
+-    return ${PASCAL_NAME}Dto.fromJson(json).toEntity();
++  Future<${PASCAL}Entity> get${PASCAL}Data() async {
++    // TODO: Implementar chamada ao datasource
++    final data = await _dataSource.fetch${PASCAL}Data();
++    return ${PASCAL}Entity(id: data['id'] ?? '1', name: data['name'] ?? 'Default');
+   }
+ }
+ EOF
+ 
+-# ---- domain/entities -----------------------------------------------------------
+-
+-cat > "${FEATURE_DIR}/domain/entities/${SLUG}_entity.dart" <<EOF
+-/// Entidade de domínio de "${RAW_NAME}".
+-///
+-/// Objeto de negócio puro: sem anotação de serialização, sem depender de
+-/// nada de \`data/\` ou \`presentation/\`.
+-class ${PASCAL_NAME}Entity {
+-  const ${PASCAL_NAME}Entity({required this.id});
+-
+-  final String id;
+-}
+-EOF
+-
+-# ---- domain/repositories --------------------------------------------------------
+-
+-cat > "${FEATURE_DIR}/domain/repositories/${SLUG}_repository.dart" <<EOF
+-import '../entities/${SLUG}_entity.dart';
+-
+-/// Contrato que a camada de dados (\`data/repositories\`) precisa implementar.
+-///
+-/// O domínio depende apenas desta abstração — nunca da implementação
+-/// concreta (${PASCAL_NAME}RepositoryImpl). Isso permite trocar a fonte de
+-/// dados (ex.: API -> cache local) sem tocar em \`domain/\` nem
+-/// \`presentation/\`.
+-abstract class ${PASCAL_NAME}Repository {
+-  Future<${PASCAL_NAME}Entity> get${PASCAL_NAME}Data();
+-}
+-EOF
+-
+-# ---- domain/usecases ------------------------------------------------------------
+-
+-cat > "${FEATURE_DIR}/domain/usecases/get_${SLUG}_data_usecase.dart" <<EOF
+-import 'package:riverpod/riverpod.dart';
+-
+-import '../../data/repositories/${SLUG}_repository_impl.dart';
+-import '../entities/${SLUG}_entity.dart';
+-import '../repositories/${SLUG}_repository.dart';
+-
+-final get${PASCAL_NAME}DataUsecaseProvider =
+-    Provider<Get${PASCAL_NAME}DataUsecase>((ref) {
+-  return Get${PASCAL_NAME}DataUsecase(ref.read(${CAMEL_NAME}RepositoryProvider));
+-});
++# Remote DataSource
++cat > "$FEATURE_DIR/data/datasources/${SLUG}_remote_datasource.dart" << EOF
++class ${PASCAL}RemoteDataSource {
++  const ${PASCAL}RemoteDataSource();
+ 
+-/// Caso de uso: obter os dados de "${RAW_NAME}".
+-///
+-/// Uma ação de negócio por classe. Hoje é só um repasse ao repository, mas
+-/// é aqui que entra qualquer regra adicional (validação, combinação de
+-/// múltiplas fontes, etc.) sem misturar com a camada de apresentação.
+-class Get${PASCAL_NAME}DataUsecase {
+-  const Get${PASCAL_NAME}DataUsecase(this._repository);
+-
+-  final ${PASCAL_NAME}Repository _repository;
+-
+-  Future<${PASCAL_NAME}Entity> call() {
+-    return _repository.get${PASCAL_NAME}Data();
++  Future<Map<String, dynamic>> fetch${PASCAL}Data() async {
++    // TODO: Implementar chamada real à API (Dio, http, etc.)
++    throw UnimplementedError('Implementar integração com API');
+   }
+ }
+ EOF
+ 
+-# ---- presentation/controllers ------------------------------------------------
+-
+-cat > "${FEATURE_DIR}/presentation/controllers/${SLUG}_notifier.dart" <<EOF
++# Notifier / Controller
++cat > "$FEATURE_DIR/presentation/controllers/${SLUG}_notifier.dart" << EOF
+ import 'package:riverpod/riverpod.dart';
+ 
+ import '../../domain/entities/${SLUG}_entity.dart';
+-import '../../domain/usecases/get_${SLUG}_data_usecase.dart';
++import '../../domain/repositories/${SLUG}_repository.dart';
+ 
+-final ${CAMEL_NAME}NotifierProvider =
+-    AsyncNotifierProvider<${PASCAL_NAME}Notifier, ${PASCAL_NAME}Entity?>(
+-  ${PASCAL_NAME}Notifier.new,
++final ${SLUG}NotifierProvider = AsyncNotifierProvider<${PASCAL}Notifier, ${PASCAL}Entity?>(
++  ${PASCAL}Notifier.new,
+ );
+ 
+-/// Controller (Notifier) da tela de "${RAW_NAME}".
+-///
+-/// Orquestra usecases e expõe o estado para a UI. Não deve conter lógica
+-/// de negócio (isso é papel do usecase) nem detalhe de widget.
+-class ${PASCAL_NAME}Notifier extends AsyncNotifier<${PASCAL_NAME}Entity?> {
++class ${PASCAL}Notifier extends AsyncNotifier<${PASCAL}Entity?> {
+   @override
+-  Future<${PASCAL_NAME}Entity?> build() async => null;
++  Future<${PASCAL}Entity?> build() => Future.value(null);
+ 
+   Future<void> load() async {
+     state = const AsyncLoading();
+     state = await AsyncValue.guard(
+-      () => ref.read(get${PASCAL_NAME}DataUsecaseProvider).call(),
++      () => ref.read(${SLUG}RepositoryProvider).get${PASCAL}Data(),
+     );
+   }
+ }
+ EOF
+ 
+-# ---- presentation/pages ----------------------------------------------------------
+-
+-cat > "${FEATURE_DIR}/presentation/pages/${SLUG}_page.dart" <<EOF
++# Page
++cat > "$FEATURE_DIR/presentation/pages/${SLUG}_page.dart" << EOF
+ import 'package:flutter/material.dart';
+ import 'package:flutter_riverpod/flutter_riverpod.dart';
+ 
+ import '../controllers/${SLUG}_notifier.dart';
+-import '../widgets/${SLUG}_header_widget.dart';
+ 
+-/// Tela principal da feature "${RAW_NAME}".
+-class ${PASCAL_NAME}Page extends ConsumerWidget {
+-  const ${PASCAL_NAME}Page({super.key});
++class ${PASCAL}Page extends ConsumerWidget {
++  const ${PASCAL}Page({super.key});
+ 
+   @override
+   Widget build(BuildContext context, WidgetRef ref) {
+-    final state = ref.watch(${CAMEL_NAME}NotifierProvider);
++    final state = ref.watch(${SLUG}NotifierProvider);
+ 
+     return Scaffold(
+       appBar: AppBar(title: const Text('${RAW_NAME}')),
+-      body: Column(
+-        children: [
+-          const ${PASCAL_NAME}HeaderWidget(),
+-          Expanded(
+-            child: state.when(
+-              data: (data) => Center(
+-                child: Text(data == null ? 'Nenhum dado carregado' : data.id),
+-              ),
+-              loading: () => const Center(child: CircularProgressIndicator()),
+-              error: (error, _) => Center(child: Text('Erro: \$error')),
+-            ),
+-          ),
+-        ],
++      body: state.when(
++        data: (data) => const Center(child: Text('Feature pronta!')),
++        loading: () => const Center(child: CircularProgressIndicator()),
++        error: (error, _) => Center(child: Text('Erro: \$error')),
+       ),
+     );
+   }
+ }
+ EOF
+ 
+-# ---- presentation/widgets --------------------------------------------------------
+-
+-cat > "${FEATURE_DIR}/presentation/widgets/${SLUG}_header_widget.dart" <<EOF
++# Widget exemplo
++cat > "$FEATURE_DIR/presentation/widgets/${SLUG}_header_widget.dart" << EOF
+ import 'package:flutter/material.dart';
+ 
+-/// Cabeçalho da tela de "${RAW_NAME}".
+-///
+-/// Extraído da página principal para manter \`${SLUG}_page.dart\` enxuta e
+-/// este widget testável isoladamente.
+-class ${PASCAL_NAME}HeaderWidget extends StatelessWidget {
+-  const ${PASCAL_NAME}HeaderWidget({super.key});
++class ${PASCAL}HeaderWidget extends StatelessWidget {
++  const ${PASCAL}HeaderWidget({super.key});
+ 
+   @override
+   Widget build(BuildContext context) {
+-    return Padding(
+-      padding: const EdgeInsets.all(16),
++    return const Padding(
++      padding: EdgeInsets.all(16.0),
+       child: Text(
+-        '${RAW_NAME}',
+-        style: Theme.of(context).textTheme.headlineSmall,
++        'Cabeçalho da Feature',
++        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+       ),
+     );
+   }
+ }
+ EOF
+ 
+-green "✅ Feature '${SLUG}' criada com sucesso em ${FEATURE_DIR}/"
+-
+-# ---------------------------------------------------------------------------
+-# Geração da estrutura test/ (mesmo espelho)
+-# ---------------------------------------------------------------------------
+-
+-mkdir -p "${TEST_FEATURE_DIR}/data/datasources"
+-mkdir -p "${TEST_FEATURE_DIR}/data/dtos"
+-mkdir -p "${TEST_FEATURE_DIR}/data/repositories"
+-mkdir -p "${TEST_FEATURE_DIR}/domain/entities"
+-mkdir -p "${TEST_FEATURE_DIR}/domain/repositories"
+-mkdir -p "${TEST_FEATURE_DIR}/domain/usecases"
+-mkdir -p "${TEST_FEATURE_DIR}/presentation/controllers"
+-mkdir -p "${TEST_FEATURE_DIR}/presentation/pages"
+-mkdir -p "${TEST_FEATURE_DIR}/presentation/widgets"
+-
+-# domain/repositories é só uma interface (sem lógica própria) — não gera
+-# teste em cima dela, mas mantém a pasta rastreável no git com uma nota.
+-cat > "${TEST_FEATURE_DIR}/domain/repositories/.gitkeep" <<EOF
+-# Pasta mantida vazia de propósito: ${PASCAL_NAME}Repository (em
+-# lib/.../domain/repositories/) é só uma interface/contrato, sem lógica
+-# própria. Não há o que testar aqui — quem testa o comportamento é
+-# ${PASCAL_NAME}RepositoryImpl, em data/repositories/.
+-EOF
+-
+-# ---- data/datasources ------------------------------------------------------------
+-
+-cat > "${TEST_FEATURE_DIR}/data/datasources/${SLUG}_remote_datasource_test.dart" <<EOF
+-import 'package:flutter_test/flutter_test.dart';
+-
+-import 'package:${PACKAGE_NAME}/src/features/${SLUG}/data/datasources/${SLUG}_remote_datasource.dart';
+-
+-void main() {
+-  group('${PASCAL_NAME}RemoteDataSource', () {
+-    test('TODO: substituir por um teste real assim que a chamada de API existir', () {
+-      const dataSource = ${PASCAL_NAME}RemoteDataSource();
+-
+-      expect(
+-        () => dataSource.fetch${PASCAL_NAME}Data(),
+-        throwsA(isA<UnimplementedError>()),
+-      );
+-    });
+-  });
+-}
+-EOF
+-
+-# ---- data/dtos --------------------------------------------------------------------
+-
+-cat > "${TEST_FEATURE_DIR}/data/dtos/${SLUG}_dto_test.dart" <<EOF
+-import 'package:flutter_test/flutter_test.dart';
+-
+-import 'package:${PACKAGE_NAME}/src/features/${SLUG}/data/dtos/${SLUG}_dto.dart';
+-
+-void main() {
+-  group('${PASCAL_NAME}Dto', () {
+-    test('fromJson faz o parse corretamente', () {
+-      final dto = ${PASCAL_NAME}Dto.fromJson({'id': '123'});
+-
+-      expect(dto.id, '123');
+-    });
+-
+-    test('toEntity converte para a entidade de domínio', () {
+-      const dto = ${PASCAL_NAME}Dto(id: '123');
+-
+-      final entity = dto.toEntity();
+-
+-      expect(entity.id, '123');
+-    });
+-  });
+-}
+-EOF
+-
+-# ---- data/repositories --------------------------------------------------------------
+-
+-cat > "${TEST_FEATURE_DIR}/data/repositories/${SLUG}_repository_impl_test.dart" <<EOF
+-import 'package:flutter_test/flutter_test.dart';
+-import 'package:mocktail/mocktail.dart';
+-
+-import 'package:${PACKAGE_NAME}/src/features/${SLUG}/data/datasources/${SLUG}_remote_datasource.dart';
+-import 'package:${PACKAGE_NAME}/src/features/${SLUG}/data/repositories/${SLUG}_repository_impl.dart';
+-
+-class _Mock${PASCAL_NAME}RemoteDataSource extends Mock
+-    implements ${PASCAL_NAME}RemoteDataSource {}
+-
+-void main() {
+-  group('${PASCAL_NAME}RepositoryImpl', () {
+-    test('get${PASCAL_NAME}Data converte o retorno do datasource em entidade', () async {
+-      final dataSource = _Mock${PASCAL_NAME}RemoteDataSource();
+-      when(() => dataSource.fetch${PASCAL_NAME}Data())
+-          .thenAnswer((_) async => {'id': '123'});
+-
+-      final repository = ${PASCAL_NAME}RepositoryImpl(dataSource);
+-      final entity = await repository.get${PASCAL_NAME}Data();
+-
+-      expect(entity.id, '123');
+-    });
+-  });
+-}
+-EOF
+-
+-# ---- domain/entities ----------------------------------------------------------------
+-
+-cat > "${TEST_FEATURE_DIR}/domain/entities/${SLUG}_entity_test.dart" <<EOF
+-import 'package:flutter_test/flutter_test.dart';
+-
+-import 'package:${PACKAGE_NAME}/src/features/${SLUG}/domain/entities/${SLUG}_entity.dart';
+-
+-void main() {
+-  group('${PASCAL_NAME}Entity', () {
+-    test('armazena os campos recebidos no construtor', () {
+-      const entity = ${PASCAL_NAME}Entity(id: '123');
+-
+-      expect(entity.id, '123');
+-    });
+-  });
+-}
+-EOF
+-
+-# ---- domain/usecases -----------------------------------------------------------------
+-
+-cat > "${TEST_FEATURE_DIR}/domain/usecases/get_${SLUG}_data_usecase_test.dart" <<EOF
+-import 'package:flutter_test/flutter_test.dart';
+-import 'package:mocktail/mocktail.dart';
+-
+-import 'package:${PACKAGE_NAME}/src/features/${SLUG}/domain/entities/${SLUG}_entity.dart';
+-import 'package:${PACKAGE_NAME}/src/features/${SLUG}/domain/repositories/${SLUG}_repository.dart';
+-import 'package:${PACKAGE_NAME}/src/features/${SLUG}/domain/usecases/get_${SLUG}_data_usecase.dart';
+-
+-class _Mock${PASCAL_NAME}Repository extends Mock implements ${PASCAL_NAME}Repository {}
+-
+-void main() {
+-  group('Get${PASCAL_NAME}DataUsecase', () {
+-    test('delega a chamada para o repository', () async {
+-      final repository = _Mock${PASCAL_NAME}Repository();
+-      const entity = ${PASCAL_NAME}Entity(id: '123');
+-      when(() => repository.get${PASCAL_NAME}Data()).thenAnswer((_) async => entity);
+-
+-      final usecase = Get${PASCAL_NAME}DataUsecase(repository);
+-      final result = await usecase();
+-
+-      expect(result, entity);
+-      verify(() => repository.get${PASCAL_NAME}Data()).called(1);
+-    });
+-  });
+-}
+-EOF
+-
+-# ---- presentation/controllers -----------------------------------------------------
+-
+-cat > "${TEST_FEATURE_DIR}/presentation/controllers/${SLUG}_notifier_test.dart" <<EOF
+-import 'package:flutter_riverpod/flutter_riverpod.dart';
+-import 'package:flutter_test/flutter_test.dart';
+-import 'package:mocktail/mocktail.dart';
+-
+-import 'package:${PACKAGE_NAME}/src/features/${SLUG}/domain/entities/${SLUG}_entity.dart';
+-import 'package:${PACKAGE_NAME}/src/features/${SLUG}/domain/usecases/get_${SLUG}_data_usecase.dart';
+-import 'package:${PACKAGE_NAME}/src/features/${SLUG}/presentation/controllers/${SLUG}_notifier.dart';
+-
+-class _MockGet${PASCAL_NAME}DataUsecase extends Mock
+-    implements Get${PASCAL_NAME}DataUsecase {}
+-
+-void main() {
+-  group('${PASCAL_NAME}Notifier', () {
+-    test('load() atualiza o estado com o dado retornado pelo usecase', () async {
+-      final usecase = _MockGet${PASCAL_NAME}DataUsecase();
+-      const entity = ${PASCAL_NAME}Entity(id: '123');
+-      when(() => usecase()).thenAnswer((_) async => entity);
+-
+-      final container = ProviderContainer(
+-        overrides: [
+-          get${PASCAL_NAME}DataUsecaseProvider.overrideWithValue(usecase),
+-        ],
+-      );
+-      addTearDown(container.dispose);
+-
+-      final notifier = container.read(${CAMEL_NAME}NotifierProvider.notifier);
+-      await notifier.load();
+-
+-      final state = container.read(${CAMEL_NAME}NotifierProvider);
+-      expect(state.value, entity);
+-    });
+-  });
+-}
+-EOF
+-
+-# ---- presentation/pages -------------------------------------------------------------
+-
+-cat > "${TEST_FEATURE_DIR}/presentation/pages/${SLUG}_page_test.dart" <<EOF
+-import 'package:flutter/material.dart';
+-import 'package:flutter_riverpod/flutter_riverpod.dart';
+-import 'package:flutter_test/flutter_test.dart';
+-
+-import 'package:${PACKAGE_NAME}/src/features/${SLUG}/presentation/pages/${SLUG}_page.dart';
+-
+-void main() {
+-  testWidgets('${PASCAL_NAME}Page exibe o título e o cabeçalho', (tester) async {
+-    await tester.pumpWidget(
+-      const ProviderScope(
+-        child: MaterialApp(home: ${PASCAL_NAME}Page()),
+-      ),
+-    );
+-
+-    expect(find.text('${RAW_NAME}'), findsWidgets);
+-  });
+-}
+-EOF
+-
+-# ---- presentation/widgets ------------------------------------------------------------
+-
+-cat > "${TEST_FEATURE_DIR}/presentation/widgets/${SLUG}_header_widget_test.dart" <<EOF
+-import 'package:flutter/material.dart';
+-import 'package:flutter_test/flutter_test.dart';
+-
+-import 'package:${PACKAGE_NAME}/src/features/${SLUG}/presentation/widgets/${SLUG}_header_widget.dart';
+-
+-void main() {
+-  testWidgets('${PASCAL_NAME}HeaderWidget exibe o nome da feature', (tester) async {
+-    await tester.pumpWidget(
+-      const MaterialApp(home: ${PASCAL_NAME}HeaderWidget()),
+-    );
+-
+-    expect(find.text('${RAW_NAME}'), findsOneWidget);
+-  });
+-}
+-EOF
+-
+-green "✅ Testes gerados com sucesso em ${TEST_FEATURE_DIR}/"
+-echo ""
+-echo "   ${FEATURE_DIR}/                              ${TEST_FEATURE_DIR}/"
+-echo "   ├── data/                                   ├── data/"
+-echo "   │   ├── datasources/${SLUG}_remote_datasource.dart"
+-echo "   │   ├── dtos/${SLUG}_dto.dart"
+-echo "   │   └── repositories/${SLUG}_repository_impl.dart"
+-echo "   ├── domain/                                 ├── domain/"
+-echo "   │   ├── entities/${SLUG}_entity.dart"
+-echo "   │   ├── repositories/${SLUG}_repository.dart   (sem teste — só interface)"
+-echo "   │   └── usecases/get_${SLUG}_data_usecase.dart"
+-echo "   └── presentation/                           └── presentation/"
+-echo "       ├── controllers/${SLUG}_notifier.dart"
+-echo "       ├── pages/${SLUG}_page.dart"
+-echo "       └── widgets/${SLUG}_header_widget.dart"
++echo "✅ Feature '${SLUG}' criada com sucesso!"
++echo "📍 Local: $FEATURE_DIR"
+ echo ""
+-
+-if [[ "$PACKAGE_NAME" == "<seu_pacote>" ]]; then
+-  yellow "⚠️  Lembre-se de trocar '<seu_pacote>' pelo nome real do pacote"
+-  yellow "   (campo 'name:' do pubspec.yaml) nos imports dos arquivos de teste."
+-fi
+\ No newline at end of file
++echo "Próximos passos:"
++echo "   1. Adicione a rota no app_router.dart"
++echo "   2. Implemente a lógica no RemoteDataSource"
++echo "   3. Chame .load() no Notifier quando necessário"
++EOF
+diff --git a/template/integration_test/app_test.dart b/template/integration_test/app_test.dart
+index 5f95485..aed591b 100644
+--- a/template/integration_test/app_test.dart
++++ b/template/integration_test/app_test.dart
+@@ -1,36 +1,17 @@
+ import 'package:flutter_test/flutter_test.dart';
+ import 'package:integration_test/integration_test.dart';
++import 'package:__PACKAGE_NAME__/main.dart' as app;
+ 
+-import '../lib/main.dart' as app;
+-
+-// Diferente dos testes em test/, aqui o app roda de verdade (motor de
+-// renderização real — device, emulador ou build desktop/web), não em
+-// ambiente simulado. Por isso o foco deve ser em FLUXOS REAIS de ponta a
+-// ponta (o app sobe, conecta com plugins nativos, navega entre telas de
+-// verdade), e não em repetir asserts que já são cobertos pelos testes de
+-// widget em test/ — isso só deixaria a suíte mais lenta sem agregar
+-// confiança extra.
+-//
+-// Chamamos app.main() (em vez de montar MyApp manualmente) para também
+-// exercitar qualquer inicialização real que existir dentro do main() —
+-// hoje é só o runApp, mas se no futuro entrar carregamento de .env,
+-// inicialização de SDK, etc., o teste de integração continua cobrindo
+-// isso de verdade.
+-//
+-// À medida que novos domínios forem criados (via `make new-domain`), o
+-// ideal é acrescentar aqui fluxos que atravessam mais de uma feature
+-// (ex.: navegar de Home até Estoque e voltar), não um teste por feature
+-// isolada — isso já é papel do test/.
+ void main() {
+   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+ 
+-  group('Fluxo principal do app', () {
+-    testWidgets('app inicializa e mostra a HomePage', (tester) async {
++  group('Integration Test - App Flow', () {
++    testWidgets('deve abrir o app e mostrar tela inicial', (tester) async {
+       app.main();
+       await tester.pumpAndSettle();
+ 
+       expect(find.text('Flutter Skeleton'), findsOneWidget);
+-      expect(find.text('Bem-vindo ao Template!'), findsOneWidget);
++      expect(find.textContaining('pacotes configurados'), findsOneWidget);
+     });
+   });
+-}
+\ No newline at end of file
++}
+diff --git a/template/lib/main.dart b/template/lib/main.dart
+index 164d5fd..a70f370 100644
+--- a/template/lib/main.dart
++++ b/template/lib/main.dart
+@@ -1,14 +1,11 @@
+ import 'package:flutter/material.dart';
+ import 'package:flutter_riverpod/flutter_riverpod.dart';
++
+ import 'src/core/router/app_router.dart';
+ import 'src/core/theme/app_theme.dart';
+ 
+ void main() {
+-  runApp(
+-    const ProviderScope(
+-      child: MyApp(),
+-    ),
+-  );
++  runApp(const ProviderScope(child: MyApp()));
+ }
+ 
+ class MyApp extends ConsumerWidget {
+diff --git a/template/lib/src/core/router/app_router.dart b/template/lib/src/core/router/app_router.dart
+index 52327cd..93451d4 100644
+--- a/template/lib/src/core/router/app_router.dart
++++ b/template/lib/src/core/router/app_router.dart
+@@ -1,16 +1,11 @@
+ import 'package:flutter_riverpod/flutter_riverpod.dart';
+ import 'package:go_router/go_router.dart';
++
+ import '../../features/home/presentation/pages/home_page.dart';
+ 
+ final appRouterProvider = Provider<GoRouter>((ref) {
+   return GoRouter(
+     initialLocation: '/',
+-    routes: [
+-      GoRoute(
+-        path: '/',
+-        builder: (context, state) => const HomePage(),
+-      ),
+-      // Adicione outras rotas aqui
+-    ],
++    routes: [GoRoute(path: '/', builder: (context, state) => const HomePage())],
+   );
+-});
+\ No newline at end of file
++});
+diff --git a/template/lib/src/core/theme/app_theme.dart b/template/lib/src/core/theme/app_theme.dart
+index d571b47..2e11f70 100644
+--- a/template/lib/src/core/theme/app_theme.dart
++++ b/template/lib/src/core/theme/app_theme.dart
+@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
+ 
+ class AppTheme {
+   static ThemeData get light => ThemeData(
+-        useMaterial3: true,
+-        colorSchemeSeed: Colors.blue,
+-        brightness: Brightness.light,
+-      );
++    useMaterial3: true,
++    colorSchemeSeed: Colors.blue,
++    brightness: Brightness.light,
++  );
+ 
+   static ThemeData get dark => ThemeData(
+-        useMaterial3: true,
+-        colorSchemeSeed: Colors.blue,
+-        brightness: Brightness.dark,
+-      );
+-}
+\ No newline at end of file
++    useMaterial3: true,
++    colorSchemeSeed: Colors.blue,
++    brightness: Brightness.dark,
++  );
++}
+diff --git a/template/lib/src/features/home/data/datasources/home_local_datasource.dart b/template/lib/src/features/home/data/datasources/home_local_datasource.dart
+index 04442a8..19dbbe8 100644
+--- a/template/lib/src/features/home/data/datasources/home_local_datasource.dart
++++ b/template/lib/src/features/home/data/datasources/home_local_datasource.dart
+@@ -1,17 +1,9 @@
+-/// Fonte de dados LOCAL da tela inicial.
+-///
+-/// Diferente da maioria das features (que normalmente têm um
+-/// RemoteDataSource falando com uma API), a Home não depende de nada
+-/// externo — por isso usa uma fonte de dados local. O `make new-feature`
+-/// assume uma API remota por padrão (o caso mais comum), mas nada impede
+-/// de trocar por uma fonte local, como aqui, quando fizer sentido para a
+-/// feature.
+ class HomeLocalDataSource {
+   const HomeLocalDataSource();
+ 
+   Map<String, dynamic> fetchHomeData() {
+     return {
+-      'welcomeMessage': 'Bem-vindo ao Template!',
++      'welcomeMessage': 'Bem-vindo ao Flutter Skeleton!',
+       'configuredPackages': ['Riverpod', 'go_router', 'Freezed'],
+     };
+   }
+diff --git a/template/lib/src/features/home/data/dtos/home_dto.dart b/template/lib/src/features/home/data/dtos/home_dto.dart
+deleted file mode 100644
+index 7180b83..0000000
+--- a/template/lib/src/features/home/data/dtos/home_dto.dart
++++ /dev/null
+@@ -1,28 +0,0 @@
+-import '../../domain/entities/home_entity.dart';
+-
+-/// Representação bruta dos dados da Home, no formato que sai do
+-/// datasource (aqui, um Map local; numa feature remota, seria o JSON).
+-class HomeDto {
+-  const HomeDto({
+-    required this.welcomeMessage,
+-    required this.configuredPackages,
+-  });
+-
+-  factory HomeDto.fromMap(Map<String, dynamic> map) {
+-    return HomeDto(
+-      welcomeMessage: map['welcomeMessage'] as String,
+-      configuredPackages: List<String>.from(map['configuredPackages'] as List),
+-    );
+-  }
+-
+-  final String welcomeMessage;
+-  final List<String> configuredPackages;
+-
+-  /// Converte o DTO (formato do datasource) para a entidade de domínio.
+-  HomeEntity toEntity() {
+-    return HomeEntity(
+-      welcomeMessage: welcomeMessage,
+-      configuredPackages: configuredPackages,
+-    );
+-  }
+-}
+diff --git a/template/lib/src/features/home/data/repositories/home_repository_impl.dart b/template/lib/src/features/home/data/repositories/home_repository_impl.dart
+index b9a60df..91a1514 100644
+--- a/template/lib/src/features/home/data/repositories/home_repository_impl.dart
++++ b/template/lib/src/features/home/data/repositories/home_repository_impl.dart
+@@ -3,16 +3,11 @@ import 'package:riverpod/riverpod.dart';
+ import '../../domain/entities/home_entity.dart';
+ import '../../domain/repositories/home_repository.dart';
+ import '../datasources/home_local_datasource.dart';
+-import '../dtos/home_dto.dart';
+ 
+ final homeRepositoryProvider = Provider<HomeRepository>((ref) {
+   return HomeRepositoryImpl(const HomeLocalDataSource());
+ });
+ 
+-/// Implementação concreta de [HomeRepository].
+-///
+-/// Orquestra a fonte de dados (datasource) e converte DTO -> Entity antes
+-/// de devolver para o domínio.
+ class HomeRepositoryImpl implements HomeRepository {
+   const HomeRepositoryImpl(this._dataSource);
+ 
+@@ -21,6 +16,9 @@ class HomeRepositoryImpl implements HomeRepository {
+   @override
+   Future<HomeEntity> getHomeData() async {
+     final map = _dataSource.fetchHomeData();
+-    return HomeDto.fromMap(map).toEntity();
++    return HomeEntity(
++      welcomeMessage: map['welcomeMessage'] as String,
++      configuredPackages: List<String>.from(map['configuredPackages']),
++    );
+   }
+ }
+diff --git a/template/lib/src/features/home/domain/entities/home_entity.dart b/template/lib/src/features/home/domain/entities/home_entity.dart
+index cf5cb95..4566067 100644
+--- a/template/lib/src/features/home/domain/entities/home_entity.dart
++++ b/template/lib/src/features/home/domain/entities/home_entity.dart
+@@ -1,7 +1,3 @@
+-/// Entidade de domínio da tela inicial.
+-///
+-/// Objeto de negócio puro: sem anotação de serialização, sem depender de
+-/// nada de `data/` ou `presentation/`.
+ class HomeEntity {
+   const HomeEntity({
+     required this.welcomeMessage,
+diff --git a/template/lib/src/features/home/domain/repositories/home_repository.dart b/template/lib/src/features/home/domain/repositories/home_repository.dart
+index 7e70839..84938c4 100644
+--- a/template/lib/src/features/home/domain/repositories/home_repository.dart
++++ b/template/lib/src/features/home/domain/repositories/home_repository.dart
+@@ -1,9 +1,5 @@
+ import '../entities/home_entity.dart';
+ 
+-/// Contrato que a camada de dados (`data/repositories`) precisa implementar.
+-///
+-/// O domínio depende apenas desta abstração — nunca da implementação
+-/// concreta (HomeRepositoryImpl).
+ abstract class HomeRepository {
+   Future<HomeEntity> getHomeData();
+ }
+diff --git a/template/lib/src/features/home/domain/usecases/get_home_data_usecase.dart b/template/lib/src/features/home/domain/usecases/get_home_data_usecase.dart
+deleted file mode 100644
+index 74a42bf..0000000
+--- a/template/lib/src/features/home/domain/usecases/get_home_data_usecase.dart
++++ /dev/null
+@@ -1,20 +0,0 @@
+-import 'package:riverpod/riverpod.dart';
+-
+-import '../../data/repositories/home_repository_impl.dart';
+-import '../entities/home_entity.dart';
+-import '../repositories/home_repository.dart';
+-
+-final getHomeDataUsecaseProvider = Provider<GetHomeDataUsecase>((ref) {
+-  return GetHomeDataUsecase(ref.read(homeRepositoryProvider));
+-});
+-
+-/// Caso de uso: obter os dados da tela inicial.
+-class GetHomeDataUsecase {
+-  const GetHomeDataUsecase(this._repository);
+-
+-  final HomeRepository _repository;
+-
+-  Future<HomeEntity> call() {
+-    return _repository.getHomeData();
+-  }
+-}
+diff --git a/template/lib/src/features/home/presentation/controllers/home_notifier.dart b/template/lib/src/features/home/presentation/controllers/home_notifier.dart
+deleted file mode 100644
+index 9be7b2a..0000000
+--- a/template/lib/src/features/home/presentation/controllers/home_notifier.dart
++++ /dev/null
+@@ -1,22 +0,0 @@
+-import 'package:riverpod/riverpod.dart';
+-
+-import '../../domain/entities/home_entity.dart';
+-import '../../domain/usecases/get_home_data_usecase.dart';
+-
+-final homeNotifierProvider = AsyncNotifierProvider<HomeNotifier, HomeEntity>(
+-  HomeNotifier.new,
+-);
+-
+-/// Controller (Notifier) da tela inicial.
+-///
+-/// Diferente do padrão gerado por `make new-feature` (que começa com
+-/// estado nulo e espera uma chamada explícita a `.load()`, pensado para
+-/// ações disparadas pelo usuário), a Home carrega os dados assim que a
+-/// tela é aberta — não faz sentido o usuário precisar "pedir" pra ver a
+-/// tela de boas-vindas.
+-class HomeNotifier extends AsyncNotifier<HomeEntity> {
+-  @override
+-  Future<HomeEntity> build() {
+-    return ref.read(getHomeDataUsecaseProvider).call();
+-  }
+-}
+diff --git a/template/lib/src/features/home/presentation/pages/home_page.dart b/template/lib/src/features/home/presentation/pages/home_page.dart
+index 5aa1c65..0107155 100644
+--- a/template/lib/src/features/home/presentation/pages/home_page.dart
++++ b/template/lib/src/features/home/presentation/pages/home_page.dart
+@@ -1,7 +1,7 @@
+ import 'package:flutter/material.dart';
+ import 'package:flutter_riverpod/flutter_riverpod.dart';
+ 
+-import '../controllers/home_notifier.dart';
++import '../notifiers/home_notifier.dart';
+ import '../widgets/home_header_widget.dart';
+ 
+ class HomePage extends ConsumerWidget {
+@@ -19,8 +19,8 @@ class HomePage extends ConsumerWidget {
+             mainAxisAlignment: MainAxisAlignment.center,
+             children: [
+               HomeHeaderWidget(message: data.welcomeMessage),
+-              const SizedBox(height: 16),
+-              Text(data.configuredPackages.join(' + ')),
++              const SizedBox(height: 24),
++              Text(data.configuredPackages.join(' • ')),
+               Text('${data.configuredPackages.length} pacotes configurados'),
+             ],
+           ),
+diff --git a/template/lib/src/features/home/presentation/widgets/home_header_widget.dart b/template/lib/src/features/home/presentation/widgets/home_header_widget.dart
+index 070a241..6e664a7 100644
+--- a/template/lib/src/features/home/presentation/widgets/home_header_widget.dart
++++ b/template/lib/src/features/home/presentation/widgets/home_header_widget.dart
+@@ -1,9 +1,5 @@
+ import 'package:flutter/material.dart';
+ 
+-/// Mensagem de boas-vindas da tela inicial.
+-///
+-/// Extraído da página principal para manter `home_page.dart` enxuta e
+-/// este widget testável isoladamente.
+ class HomeHeaderWidget extends StatelessWidget {
+   const HomeHeaderWidget({required this.message, super.key});
+ 
+@@ -11,6 +7,10 @@ class HomeHeaderWidget extends StatelessWidget {
+ 
+   @override
+   Widget build(BuildContext context) {
+-    return Text(message, style: const TextStyle(fontSize: 24));
++    return Text(
++      message,
++      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
++      textAlign: TextAlign.center,
++    );
+   }
+ }
+diff --git a/template/test/app_test.dart b/template/test/app_test.dart
+deleted file mode 100644
+index 3dfcc4e..0000000
+--- a/template/test/app_test.dart
++++ /dev/null
+@@ -1,23 +0,0 @@
+-import 'package:flutter_riverpod/flutter_riverpod.dart';
+-import 'package:flutter_test/flutter_test.dart';
+-
+-import '../lib/main.dart';
+-
+-// Smoke test: garante que a composição final do app (tema + rotas + DI via
+-// Riverpod, todos juntos a partir de MyApp) sobe sem erros e chega até a
+-// tela esperada na rota inicial.
+-//
+-// Não repetimos aqui os asserts detalhados de conteúdo da HomePage — isso
+-// já está coberto em home_page_test.dart. Este teste existe só para pegar
+-// erros de "encanamento" (ex.: um provider mal configurado que só quebra
+-// quando tudo é montado junto).
+-void main() {
+-  testWidgets('App inicializa e mostra a HomePage na rota inicial', (
+-    tester,
+-  ) async {
+-    await tester.pumpWidget(const ProviderScope(child: MyApp()));
+-    await tester.pumpAndSettle();
+-
+-    expect(find.text('Bem-vindo ao Template!'), findsOneWidget);
+-  });
+-}
+\ No newline at end of file
+diff --git a/template/test/core/router/app_router_test.dart b/template/test/core/router/app_router_test.dart
+index c6b3945..cd94b7c 100644
+--- a/template/test/core/router/app_router_test.dart
++++ b/template/test/core/router/app_router_test.dart
+@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
+ import 'package:flutter_riverpod/flutter_riverpod.dart';
+ import 'package:flutter_test/flutter_test.dart';
+ 
+-import '../../../lib/src/core/router/app_router.dart';
+-import '../../../lib/src/features/home/presentation/pages/home_page.dart';
++import 'package:__PACKAGE_NAME__/src/core/router/app_router.dart';
++import 'package:__PACKAGE_NAME__/src/features/home/presentation/pages/home_page.dart';
+ 
+ // O que testamos aqui: que a NOSSA configuração de rotas (o mapeamento
+ // path -> widget) está correta — a rota "/" deve levar até a HomePage.
+@@ -28,4 +28,4 @@ void main() {
+ 
+     expect(find.byType(HomePage), findsOneWidget);
+   });
+-}
+\ No newline at end of file
++}
+diff --git a/template/test/core/theme/app_theme_test.dart b/template/test/core/theme/app_theme_test.dart
+index ad8ca89..c15683e 100644
+--- a/template/test/core/theme/app_theme_test.dart
++++ b/template/test/core/theme/app_theme_test.dart
+@@ -1,7 +1,7 @@
+ import 'package:flutter/material.dart';
+ import 'package:flutter_test/flutter_test.dart';
+ 
+-import '../../../lib/src/core/theme/app_theme.dart';
++import 'package:__PACKAGE_NAME__/src/core/theme/app_theme.dart';
+ 
+ // O que testamos aqui: a NOSSA configuração (useMaterial3, brightness,
+ // seed color) está sendo aplicada como esperado nos dois temas.
+@@ -31,4 +31,4 @@ void main() {
+       expect(AppTheme.dark.colorScheme.brightness, Brightness.dark);
+     });
+   });
+-}
+\ No newline at end of file
++}
+diff --git a/template/test/features/home/data/datasources/home_local_datasource_test.dart b/template/test/features/home/data/datasources/home_local_datasource_test.dart
+index e69de29..ebb631c 100644
+--- a/template/test/features/home/data/datasources/home_local_datasource_test.dart
++++ b/template/test/features/home/data/datasources/home_local_datasource_test.dart
+@@ -0,0 +1,19 @@
++import 'package:flutter_test/flutter_test.dart';
++import 'package:__PACKAGE_NAME__/src/features/home/data/datasources/home_local_datasource.dart';
++
++void main() {
++  late HomeLocalDataSource dataSource;
++
++  setUp(() {
++    dataSource = const HomeLocalDataSource();
++  });
++
++  group('HomeLocalDataSource', () {
++    test('deve retornar dados da tela inicial', () {
++      final result = dataSource.fetchHomeData();
++
++      expect(result['welcomeMessage'], isNotEmpty);
++      expect(result['configuredPackages'], isA<List<String>>());
++    });
++  });
++}
+diff --git a/template/test/features/home/data/dtos/home_dto_test.dart b/template/test/features/home/data/dtos/home_dto_test.dart
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/template/test/features/home/data/repositories/home_repository_impl_test.dart b/template/test/features/home/data/repositories/home_repository_impl_test.dart
+index e69de29..c454220 100644
+--- a/template/test/features/home/data/repositories/home_repository_impl_test.dart
++++ b/template/test/features/home/data/repositories/home_repository_impl_test.dart
+@@ -0,0 +1,28 @@
++import 'package:flutter_test/flutter_test.dart';
++import 'package:mocktail/mocktail.dart';
++import 'package:__PACKAGE_NAME__/src/features/home/data/datasources/home_local_datasource.dart';
++import 'package:__PACKAGE_NAME__/src/features/home/data/repositories/home_repository_impl.dart';
++
++class MockHomeLocalDataSource extends Mock implements HomeLocalDataSource {}
++
++void main() {
++  late MockHomeLocalDataSource mockDataSource;
++  late HomeRepositoryImpl repository;
++
++  setUp(() {
++    mockDataSource = MockHomeLocalDataSource();
++    repository = HomeRepositoryImpl(mockDataSource);
++  });
++
++  test('deve buscar dados e retornar HomeEntity', () async {
++    when(() => mockDataSource.fetchHomeData()).thenReturn({
++      'welcomeMessage': 'Bem-vindo ao teste!',
++      'configuredPackages': ['Riverpod', 'go_router'],
++    });
++
++    final result = await repository.getHomeData();
++
++    expect(result.welcomeMessage, 'Bem-vindo ao teste!');
++    expect(result.configuredPackages.length, 2);
++  });
++}
+diff --git a/template/test/features/home/domain/entities/home_entity_test.dart b/template/test/features/home/domain/entities/home_entity_test.dart
+index e69de29..8960e4f 100644
+--- a/template/test/features/home/domain/entities/home_entity_test.dart
++++ b/template/test/features/home/domain/entities/home_entity_test.dart
+@@ -0,0 +1,17 @@
++import 'package:flutter_test/flutter_test.dart';
++import 'package:__PACKAGE_NAME__/src/features/home/domain/entities/home_entity.dart';
++
++void main() {
++  group('HomeEntity', () {
++    test('deve criar entidade corretamente', () {
++      const entity = HomeEntity(
++        welcomeMessage: 'Bem-vindo!',
++        configuredPackages: ['Riverpod', 'go_router'],
++      );
++
++      expect(entity.welcomeMessage, 'Bem-vindo!');
++      expect(entity.configuredPackages, ['Riverpod', 'go_router']);
++      expect(entity.configuredPackages.length, 2);
++    });
++  });
++}
+diff --git a/template/test/features/home/domain/repositories/.gitkeep b/template/test/features/home/domain/repositories/.gitkeep
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/template/test/features/home/domain/usecases/get_home_data_usecase_test.dart b/template/test/features/home/domain/usecases/get_home_data_usecase_test.dart
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/template/test/features/home/presentation/controllers/home_notifier_test.dart b/template/test/features/home/presentation/controllers/home_notifier_test.dart
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/template/test/features/home/presentation/pages/home_page_test.dart b/template/test/features/home/presentation/pages/home_page_test.dart
+index e69de29..fcaa1d3 100644
+--- a/template/test/features/home/presentation/pages/home_page_test.dart
++++ b/template/test/features/home/presentation/pages/home_page_test.dart
+@@ -0,0 +1,19 @@
++import 'package:flutter/material.dart';
++import 'package:flutter_riverpod/flutter_riverpod.dart';
++import 'package:flutter_test/flutter_test.dart';
++
++import 'package:__PACKAGE_NAME__/src/features/home/presentation/pages/home_page.dart';
++
++void main() {
++  testWidgets('HomePage deve carregar e exibir conteúdo', (tester) async {
++    await tester.pumpWidget(
++      const ProviderScope(child: MaterialApp(home: HomePage())),
++    );
++
++    await tester.pumpAndSettle();
++
++    expect(find.text('Flutter Skeleton'), findsOneWidget);
++    expect(find.textContaining('Bem-vindo'), findsOneWidget);
++    expect(find.textContaining('pacotes configurados'), findsOneWidget);
++  });
++}
+diff --git a/template/test/features/home/presentation/widgets/home_header_widget_test.dart b/template/test/features/home/presentation/widgets/home_header_widget_test.dart
+index e69de29..2421aca 100644
+--- a/template/test/features/home/presentation/widgets/home_header_widget_test.dart
++++ b/template/test/features/home/presentation/widgets/home_header_widget_test.dart
+@@ -0,0 +1,16 @@
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++
++import 'package:__PACKAGE_NAME__/src/features/home/presentation/widgets/home_header_widget.dart';
++
++void main() {
++  testWidgets('HomeHeaderWidget exibe a mensagem recebida', (tester) async {
++    await tester.pumpWidget(
++      const MaterialApp(
++        home: HomeHeaderWidget(message: 'Bem-vindo ao Flutter Skeleton!'),
++      ),
++    );
++
++    expect(find.text('Bem-vindo ao Flutter Skeleton!'), findsOneWidget);
++  });
++}
