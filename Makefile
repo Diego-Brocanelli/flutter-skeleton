@@ -7,6 +7,11 @@ SERVICE := flutter-dev
 -include .env
 PROJECT_NAME ?= flutter-dev
 
+# IMAGE_NAME é o nome usado pelo Docker para a imagem (sempre minúsculas —
+# o Docker exige isso). Pode ser diferente de PROJECT_NAME, que é o nome
+# do container e preserva o que o usuário digitou (aceita mixed case).
+IMAGE_NAME ?= flutter-dev
+
 # PLATFORMS pode ser sobrescrito: make create PLATFORMS=android,web
 PLATFORMS ?= android,linux
 
@@ -20,7 +25,7 @@ export GID
 # ====================== Comandos Docker ======================
 
 build:
-	@echo ">> Buildando imagem '$(PROJECT_NAME)'..."
+	@echo ">> Buildando imagem '$(IMAGE_NAME)'..."
 	docker compose build
 
 up:
@@ -85,7 +90,7 @@ analyze:
 # Formata todo o código seguindo o padrão do Dart
 format:
 	@echo ">> Formatando código..."
-	docker compose exec $(SERVICE) dart format lib test
+	docker compose exec $(SERVICE) dart format lib test integration_test
 
 # Aplica correções automáticas do Dart
 fix:
@@ -117,8 +122,4 @@ all: format fix analyze
 ##   make new-feature              # pergunta o nome interativamente
 .PHONY: new-feature
 new-feature:
-	@if [ -z "$(filter-out $@,$(MAKECMDGOALS))" ]; then \
-		bash scripts/new_feature.sh; \
-	else \
-		bash scripts/new_feature.sh "$(filter-out $@,$(MAKECMDGOALS))"; \
-	fi
+	@bash scripts/new_feature.sh "$(name)"

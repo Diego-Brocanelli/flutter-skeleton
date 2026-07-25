@@ -1,7 +1,13 @@
-# Nome do projeto Compose = nome do projeto definido na instalação (install.sh).
-# Isso garante que "docker compose ls", nomes padrão de rede e afins também
+# O "name:" do Compose e o nome da imagem Docker SÓ aceitam minúsculas
+# (regra do próprio Docker Engine) — por isso usamos IMAGE_NAME aqui, não
+# PROJECT_NAME. O container_name, por outro lado, aceita maiúsculas e
+# minúsculas, então usa PROJECT_NAME (que preserva o nome exatamente como
+# o usuário digitou no install.sh, só removendo o que o Docker realmente
+# não aceita — espaço, acento, símbolo).
+#
+# Isso também garante que "docker compose ls", nomes padrão de rede e afins
 # fiquem isolados por projeto, e não só o container/imagem abaixo.
-name: ${PROJECT_NAME:-flutter-dev}
+name: ${IMAGE_NAME:-flutter-dev}
 
 services:
   flutter-dev:
@@ -11,7 +17,7 @@ services:
       args:
         USER_ID: ${UID:-1000}
         GROUP_ID: ${GID:-1000}
-    image: ${PROJECT_NAME:-flutter-dev}:latest
+    image: ${IMAGE_NAME:-flutter-dev}:latest
     container_name: ${PROJECT_NAME:-flutter-dev}
     # network_mode host simplifica X11 (GUI Linux) e adb (Android) no Fedora
     network_mode: host
