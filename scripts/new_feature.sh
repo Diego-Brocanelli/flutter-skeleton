@@ -296,6 +296,7 @@ EOF
 cat > "${FEATURE_DIR}/presentation/pages/${SLUG}_page.dart" <<EOF
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../notifiers/${SLUG}_notifier.dart';
 import '../widgets/${SLUG}_header_widget.dart';
@@ -309,7 +310,13 @@ class ${PASCAL_NAME}Page extends ConsumerWidget {
     final state = ref.watch(${CAMEL_NAME}NotifierProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('${DART_SAFE_NAME}')),
+      appBar: AppBar(
+        title: const Text('${DART_SAFE_NAME}'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/'), // volta para a Home
+        ),
+      ),
       body: Column(
         children: [
           const ${PASCAL_NAME}HeaderWidget(),
