@@ -146,8 +146,8 @@ done
 info "Instalando dependências..."
 
 docker compose exec flutter-dev flutter pub add --dev \
-  riverpod_generator: \
-  build_runner: \
+  riverpod_generator \
+  build_runner \
   mocktail \
   very_good_analysis
 
