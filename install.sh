@@ -144,16 +144,17 @@ done
 
 # Dependências
 info "Instalando dependências..."
+
 docker compose exec flutter-dev flutter pub add \
-  flutter_riverpod:3.4.2 \
-  riverpod_annotation:4.0.6 \
+  flutter_riverpod:^3.4.2 \
+  riverpod_annotation:^4.0.4 \
   go_router \
   flutter_native_splash \
   flutter_launcher_icons
 
 docker compose exec flutter-dev flutter pub add --dev \
   build_runner \
-  riverpod_generator:4.0.8 \
+  riverpod_generator:4.0.4 \
   mocktail \
   very_good_analysis
 
