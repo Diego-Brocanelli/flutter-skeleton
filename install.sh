@@ -145,12 +145,17 @@ done
 # Dependências
 info "Instalando dependências..."
 docker compose exec flutter-dev flutter pub add \
-  flutter_riverpod riverpod riverpod_annotation \
+  flutter_riverpod:3.4.2 \
+  riverpod_annotation:4.0.6 \
   go_router \
-  flutter_native_splash flutter_launcher_icons
+  flutter_native_splash \
+  flutter_launcher_icons
 
 docker compose exec flutter-dev flutter pub add --dev \
-  build_runner riverpod_generator mocktail very_good_analysis
+  build_runner \
+  riverpod_generator:4.0.8 \
+  mocktail \
+  very_good_analysis
 
 docker compose exec flutter-dev flutter pub add 'dev:integration_test:{"sdk":"flutter"}'
 
